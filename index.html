@@ -2,313 +2,234 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-
-<!-- MOBILE IMPORTANT -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-
 <title>Swipe King</title>
 
 <style>
-body {
-  margin: 0;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
-  background: #111;
-  color: white;
-  text-align: center;
-
-  touch-action: none;
-
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-
-  box-sizing: border-box;
-
-  display: flex;
-  flex-direction: column;
-
-  min-height: 100dvh;
+body{
+margin:0;
+overflow:hidden;
+font-family:Arial;
+background:#0b0b0b;
+color:white;
+text-align:center;
+touch-action:none;
+display:flex;
+flex-direction:column;
+min-height:100dvh;
+padding-top:env(safe-area-inset-top);
+padding-bottom:env(safe-area-inset-bottom);
 }
 
-#title {
-  font-size: 2em;
-  margin-top: 6px;
-  margin-bottom: 2px;
+#title{font-size:2em;margin-top:6px}
+#subtitle{opacity:.6;font-size:.9em;margin-bottom:6px}
+
+#game{
+flex:1;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+gap:8px;
 }
 
-#subtitle {
-  font-size: 0.9em;
-  opacity: 0.6;
-  margin-bottom: 5px;
+#distance{font-size:2.3em}
+
+#arena{
+position:relative;
+width:28vw;
+height:52vh;
+max-width:110px;
+max-height:420px;
+border-radius:12px;
+overflow:hidden;
+background:linear-gradient(180deg,#220000,#111,#010);
 }
 
-#game {
-  position: relative;
-  width: 100%;
-
-  flex: 1;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-
-  padding: 0;
-  gap: 8px;
+#rope{
+position:absolute;
+width:100%;
+height:200%;
+top:-50%;
+background:repeating-linear-gradient(
+to bottom,
+#ffcc88,
+#ffcc88 10px,
+#aa7744 10px,
+#aa7744 20px
+);
+transition:transform .05s linear;
 }
 
-#distance {
-  font-size: 2.5em;
+#enemy{
+position:absolute;
+width:100%;
+height:100%;
+background:rgba(255,0,0,.18);
+opacity:0;
 }
 
-#level {
-  opacity: 0.7;
-  margin-bottom: 10px;
+#marker{
+position:absolute;
+width:100%;
+height:6px;
+top:50%;
+background:white;
+box-shadow:0 0 10px white;
 }
 
-#arena {
-  position: relative;
-  height: 50vh;
-  width: 25vw;
-  max-width: 100px;
-  max-height: 400px;
-  background: linear-gradient(to top, #400, #222 50%, #040);
-  border-radius: 10px;
-  overflow: hidden;
+#end{
+position:fixed;
+inset:0;
+display:none;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+background:rgba(0,0,0,.95);
+z-index:9999;
+gap:12px;
 }
 
-#rope {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    to bottom,
-    #c69c6d,
-    #c69c6d 10px,
-    #b58a5a 10px,
-    #b58a5a 20px
-  );
-}
-
-#marker {
-  position: absolute;
-  width: 100%;
-  height: 6px;
-  background: white;
-  top: 50%;
-  box-shadow: 0 0 10px white;
-}
-
-#enemyIndicator {
-  position: absolute;
-  width: 100%;
-  height: 50%;
-  top: 0;
-  background: rgba(255,0,0,0.15);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-#end {
-  margin-top: 20px;
-}
-
-button {
-  margin-top: 10px;
-  padding: 12px 24px;
-  font-size: 1em;
-  border: none;
-  border-radius: 5px;
-  background: #fff;
-  cursor: pointer;
+button{
+padding:12px 18px;
+border:none;
+border-radius:10px;
+font-weight:bold;
+cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<div id="title">👑 Swipe King</div>
+<div id="title">👑 SWIPE KING</div>
 <div id="subtitle">A stress game by Alexandre Baranger</div>
 
 <div id="game">
-  <div id="distance">0 m</div>
-  <div id="level">Warmup</div>
+<div id="distance">0 cm</div>
 
-  <div id="arena">
-    <div id="enemyIndicator"></div>
-    <div id="rope"></div>
-    <div id="marker"></div>
-  </div>
-
-  <div id="end"></div>
+<div id="arena">
+<div id="enemy"></div>
+<div id="rope"></div>
+<div id="marker"></div>
+</div>
 </div>
 
+<div id="end"></div>
+
 <script>
-let distance = 0;
-let lastY = null;
-let fatigue = 1;
-let gameOver = false;
-let isHolding = false;
+let distance=0;
+let lastY=null;
+let holding=false;
+let gameOver=false;
 
-let enemyForce = 0;
-let maxDistance = 0;
+/* 🔥 IA TAPIS ROULANT */
+let enemyForce=0.18;
 
-const levels = [
-  { name: "Warmup", threshold: 0, force: 0 },
-  { name: "Easy", threshold: 20, force: 0.1 },
-  { name: "Medium", threshold: 50, force: 0.25 },
-  { name: "Hard", threshold: 100, force: 0.5 },
-  { name: "Insane", threshold: 150, force: 0.8 }
-];
+const d=document.getElementById("distance");
+const end=document.getElementById("end");
+const rope=document.getElementById("rope");
 
-let currentLevel = 0;
-let bestScore = localStorage.getItem("bestScore") || 0;
+const audio=new (window.AudioContext||window.webkitAudioContext)();
 
-const distanceEl = document.getElementById("distance");
-const levelEl = document.getElementById("level");
-const marker = document.getElementById("marker");
-const endEl = document.getElementById("end");
-const enemyIndicator = document.getElementById("enemyIndicator");
-
-// SON
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-function playSound(freq) {
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.frequency.value = freq;
-  gain.gain.value = 0.05;
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.05);
+function beep(f){
+let o=audio.createOscillator();
+let g=audio.createGain();
+o.connect(g);
+g.connect(audio.destination);
+o.frequency.value=f;
+g.gain.value=.05;
+o.start();
+o.stop(audio.currentTime+.05);
 }
 
-function updateLevel() {
-  for (let i = levels.length - 1; i >= 0; i--) {
-    if (distance >= levels[i].threshold) {
-      if (currentLevel !== i) {
-        currentLevel = i;
-        levelEl.textContent = levels[i].name;
-        playSound(800);
-      }
-      enemyForce = levels[i].force;
-      break;
-    }
-  }
+/* SWIPE */
+function swipe(y){
+if(!holding||gameOver)return;
+
+let delta=y-lastY;
+
+if(delta>8){
+distance += delta * 0.04;
+beep(260);
+if(navigator.vibrate)navigator.vibrate(5);
 }
 
-function updateDisplay() {
-  distanceEl.textContent = Math.floor(distance) + " m";
-
-  let percent = 50 - distance;
-  percent = Math.max(0, Math.min(100, percent));
-  marker.style.top = percent + "%";
-
-  enemyIndicator.style.opacity = enemyForce > 0 ? Math.min(0.5, enemyForce) : 0;
+lastY=y;
 }
 
-function gameLoop() {
-  if (gameOver) return;
+function update(){
+d.textContent=Math.floor(distance)+" cm";
 
-  updateLevel();
+/* 🔥 IA FAIT RECULER */
+distance -= enemyForce;
+if(distance<0)distance=0;
 
-  if (enemyForce > 0) {
-    distance -= enemyForce;
-  }
+/* 🔥 effet tapis roulant visuel */
+rope.style.transform=`translateY(${Math.sin(distance/10)*4 - enemyForce*30}px)`;
 
-  if (distance > maxDistance) {
-    maxDistance = distance;
-  }
-
-  fatigue += 0.0005;
-
-  updateDisplay();
-  requestAnimationFrame(gameLoop);
+document.body.style.background=`hsl(${distance%360},30%,5%)`;
 }
 
-// FIN
-function stopGame() {
-  if (gameOver) return;
-
-  gameOver = true;
-
-  let finalScore = Math.floor(maxDistance);
-
-  if (finalScore > bestScore) {
-    bestScore = finalScore;
-    localStorage.setItem("bestScore", bestScore);
-  }
-
-  distanceEl.textContent = "Finished";
-
-  endEl.innerHTML = `
-    Max reached: ${finalScore} m<br>
-    🏆 Best: ${bestScore} m<br>
-    Level: ${levels[currentLevel].name}<br>
-    <button onclick="restart()">Retry</button>
-  `;
-
-  playSound(200);
-
-  if (navigator.vibrate) {
-    navigator.vibrate([200,100,200]);
-  }
+function loop(){
+if(gameOver)return;
+update();
+requestAnimationFrame(loop);
 }
 
-function restart() {
-  location.reload();
+/* FIN */
+function endGame(){
+if(gameOver)return;
+gameOver=true;
+
+end.style.display="flex";
+
+end.innerHTML=`
+<div style="font-size:1.8em">GAME OVER</div>
+<div>Distance: ${Math.floor(distance)} cm</div>
+
+<button id="retry">Retry</button>
+<button id="copy">Copy Score</button>
+`;
+
+document.getElementById("retry").onclick=()=>location.reload();
+
+document.getElementById("copy").onclick=()=>{
+navigator.clipboard.writeText(`Swipe King: ${Math.floor(distance)} cm`);
+};
+
+if(navigator.vibrate)navigator.vibrate([200,100,200]);
+beep(180);
 }
 
-// INPUT
-function handleMove(clientY) {
-  if (!isHolding || gameOver) return;
-
-  let delta = clientY - lastY;
-
-  if (delta > 0) {
-    let force = delta * 0.1 / fatigue;
-    distance += force;
-
-    playSound(400);
-
-    if (navigator.vibrate) {
-      navigator.vibrate(5);
-    }
-  }
-
-  lastY = clientY;
-}
-
-// EVENTS
-window.addEventListener("mousedown", e => {
-  isHolding = true;
-  lastY = e.clientY;
+/* INPUT */
+window.addEventListener("mousedown",e=>{
+holding=true;
+lastY=e.clientY;
 });
 
-window.addEventListener("mousemove", e => handleMove(e.clientY));
+window.addEventListener("mousemove",e=>swipe(e.clientY));
 
-window.addEventListener("mouseup", () => {
-  isHolding = false;
-  stopGame();
+window.addEventListener("mouseup",()=>{
+holding=false;
+endGame();
 });
 
-window.addEventListener("touchstart", e => {
-  isHolding = true;
-  lastY = e.touches[0].clientY;
-}, { passive: false });
+window.addEventListener("touchstart",e=>{
+holding=true;
+lastY=e.touches[0].clientY;
+},{passive:false});
 
-window.addEventListener("touchmove", e => {
-  handleMove(e.touches[0].clientY);
-}, { passive: false });
+window.addEventListener("touchmove",e=>{
+swipe(e.touches[0].clientY);
+},{passive:false});
 
-window.addEventListener("touchend", () => {
-  isHolding = false;
-  stopGame();
+window.addEventListener("touchend",()=>{
+holding=false;
+endGame();
 });
 
-// start
-gameLoop();
+loop();
 </script>
 
 </body>
