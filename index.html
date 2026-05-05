@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Swipe King</title>
+
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: white;
+  text-align: center;
+}
+
+#title {
+  font-size: 2em;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+#game {
+  position: absolute;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+#distance {
+  font-size: 2.5em;
+}
+
+#level {
+  opacity: 0.7;
+  margin-bottom: 10px;
+}
+
+#arena {
+  position: relative;
+  height: 300px;
+  width: 80px;
+  background: linear-gradient(to top, #400, #222 50%, #040);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* corde */
+#rope {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    #c69c6d,
+    #c69c6d 10px,
+    #b58a5a 10px,
+    #b58a5a 20px
+  );
+}
+
+/* marqueur */
+#marker {
+  position: absolute;
+  width: 100%;
+  height: 6px;
+  background: white;
+  top: 50%;
+  box-shadow: 0 0 10px white;
+}
+
+/* indicateur IA */
+#enemyIndicator {
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  top: 0;
+  background: rgba(255,0,0,0.15);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+/* fin */
+#end {
+  margin-top: 20px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  font-size: 1em;
+  border: none;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+}
+#subtitle {
+  font-size: 0.9em;
+  opacity: 0.6;
+  margin-bottom: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="title">👑 Swipe King</div>
+<div id="subtitle">A stress-relief game by Alexandre Baranger</div>
+<div id="game">
+  <div id="distance">0 m</div>
+  <div id="level">Warmup</div>
+
+  <div id="arena">
+    <div id="enemyIndicator"></div>
+    <div id="rope"></div>
+    <div id="marker"></div>
+  </div>
+
+  <div id="end"></div>
+</div>
+
+<script>
+let distance = 0;
+let lastY = null;
+let fatigue = 1;
+let gameOver = false;
+let isHolding = false;
+
+let enemyForce = 0;
+let maxDistance = 0;
+
+const levels = [
+  { name: "Warmup", threshold: 0, force: 0 },
+  { name: "Easy", threshold: 20, force: 0.1 },
+  { name: "Medium", threshold: 50, force: 0.25 },
+  { name: "Hard", threshold: 100, force: 0.5 },
+  { name: "Insane", threshold: 150, force: 0.8 }
+];
+
+let currentLevel = 0;
+let bestScore = localStorage.getItem("bestScore") || 0;
+
+const distanceEl = document.getElementById("distance");
+const levelEl = document.getElementById("level");
+const marker = document.getElementById("marker");
+const endEl = document.getElementById("end");
+const enemyIndicator = document.getElementById("enemyIndicator");
+
+// son
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(freq) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.frequency.value = freq;
+  gain.gain.value = 0.05;
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.05);
+}
+
+function updateLevel() {
+  for (let i = levels.length - 1; i >= 0; i--) {
+    if (distance >= levels[i].threshold) {
+      if (currentLevel !== i) {
+        currentLevel = i;
+        levelEl.textContent = levels[i].name;
+        playSound(800);
+      }
+      enemyForce = levels[i].force;
+      break;
+    }
+  }
+}
+
+function updateDisplay() {
+  distanceEl.textContent = Math.floor(distance) + " m";
+
+  let percent = 50 - distance;
+  percent = Math.max(0, Math.min(100, percent));
+  marker.style.top = percent + "%";
+
+  // indicateur IA visible
+  enemyIndicator.style.opacity = enemyForce > 0 ? Math.min(0.5, enemyForce) : 0;
+}
+
+function gameLoop() {
+  if (gameOver) return;
+
+  updateLevel();
+
+  // IA tire
+  if (enemyForce > 0) {
+    distance -= enemyForce;
+  }
+
+  // mémorise le max atteint
+  if (distance > maxDistance) {
+    maxDistance = distance;
+  }
+
+  fatigue += 0.0005;
+
+  updateDisplay();
+  requestAnimationFrame(gameLoop);
+}
+
+// FIN quand joueur lâche
+function stopGame() {
+  if (gameOver) return;
+
+  gameOver = true;
+
+  let finalScore = Math.floor(maxDistance);
+
+  if (finalScore > bestScore) {
+    bestScore = finalScore;
+    localStorage.setItem("bestScore", bestScore);
+  }
+
+  distanceEl.textContent = "Finished";
+
+  endEl.innerHTML = `
+    Max reached: ${finalScore} m<br>
+    🏆 Best: ${bestScore} m<br>
+    Level: ${levels[currentLevel].name}<br>
+    <button onclick="restart()">Retry</button>
+  `;
+
+  playSound(200);
+
+  if (navigator.vibrate) {
+    navigator.vibrate([200,100,200]);
+  }
+}
+
+function restart() {
+  location.reload();
+}
+
+// input
+function handleMove(clientY) {
+  if (!isHolding || gameOver) return;
+
+  let delta = clientY - lastY;
+
+  if (delta > 0) {
+    let force = delta * 0.1 / fatigue;
+    distance += force;
+
+    playSound(400);
+
+    if (navigator.vibrate) {
+      navigator.vibrate(5);
+    }
+  }
+
+  lastY = clientY;
+}
+
+// events
+window.addEventListener("mousedown", e => {
+  isHolding = true;
+  lastY = e.clientY;
+});
+
+window.addEventListener("mousemove", e => handleMove(e.clientY));
+
+window.addEventListener("mouseup", () => {
+  isHolding = false;
+  stopGame();
+});
+
+window.addEventListener("touchstart", e => {
+  isHolding = true;
+  lastY = e.touches[0].clientY;
+});
+
+window.addEventListener("touchmove", e => handleMove(e.touches[0].clientY));
+
+window.addEventListener("touchend", () => {
+  isHolding = false;
+  stopGame();
+});
+
+// start
+gameLoop();
+</script>
+
+</body>
+</html>
