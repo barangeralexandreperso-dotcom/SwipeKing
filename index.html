@@ -2,6 +2,10 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+
+<!-- MOBILE IMPORTANT -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
 <title>Swipe King</title>
 
 <style>
@@ -12,12 +16,21 @@ body {
   background: #111;
   color: white;
   text-align: center;
+
+  /* bloque le scroll mobile */
+  touch-action: none;
 }
 
 #title {
   font-size: 2em;
   margin-top: 10px;
   font-weight: bold;
+}
+
+#subtitle {
+  font-size: 0.9em;
+  opacity: 0.6;
+  margin-bottom: 10px;
 }
 
 #game {
@@ -39,10 +52,13 @@ body {
   margin-bottom: 10px;
 }
 
+/* RESPONSIVE ARENA */
 #arena {
   position: relative;
-  height: 300px;
-  width: 80px;
+  height: 50vh;
+  width: 25vw;
+  max-width: 100px;
+  max-height: 400px;
   background: linear-gradient(to top, #400, #222 50%, #040);
   border-radius: 10px;
   overflow: hidden;
@@ -90,17 +106,12 @@ body {
 
 button {
   margin-top: 10px;
-  padding: 10px 20px;
+  padding: 12px 24px;
   font-size: 1em;
   border: none;
   border-radius: 5px;
   background: #fff;
   cursor: pointer;
-}
-#subtitle {
-  font-size: 0.9em;
-  opacity: 0.6;
-  margin-bottom: 10px;
 }
 </style>
 </head>
@@ -109,6 +120,7 @@ button {
 
 <div id="title">👑 Swipe King</div>
 <div id="subtitle">A stress-relief game by Alexandre Baranger</div>
+
 <div id="game">
   <div id="distance">0 m</div>
   <div id="level">Warmup</div>
@@ -149,7 +161,7 @@ const marker = document.getElementById("marker");
 const endEl = document.getElementById("end");
 const enemyIndicator = document.getElementById("enemyIndicator");
 
-// son
+// SON
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playSound(freq) {
@@ -184,7 +196,6 @@ function updateDisplay() {
   percent = Math.max(0, Math.min(100, percent));
   marker.style.top = percent + "%";
 
-  // indicateur IA visible
   enemyIndicator.style.opacity = enemyForce > 0 ? Math.min(0.5, enemyForce) : 0;
 }
 
@@ -193,12 +204,10 @@ function gameLoop() {
 
   updateLevel();
 
-  // IA tire
   if (enemyForce > 0) {
     distance -= enemyForce;
   }
 
-  // mémorise le max atteint
   if (distance > maxDistance) {
     maxDistance = distance;
   }
@@ -209,7 +218,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// FIN quand joueur lâche
+// FIN
 function stopGame() {
   if (gameOver) return;
 
@@ -242,7 +251,7 @@ function restart() {
   location.reload();
 }
 
-// input
+// INPUT
 function handleMove(clientY) {
   if (!isHolding || gameOver) return;
 
@@ -262,7 +271,7 @@ function handleMove(clientY) {
   lastY = clientY;
 }
 
-// events
+// EVENTS
 window.addEventListener("mousedown", e => {
   isHolding = true;
   lastY = e.clientY;
@@ -278,9 +287,11 @@ window.addEventListener("mouseup", () => {
 window.addEventListener("touchstart", e => {
   isHolding = true;
   lastY = e.touches[0].clientY;
-});
+}, { passive: false });
 
-window.addEventListener("touchmove", e => handleMove(e.touches[0].clientY));
+window.addEventListener("touchmove", e => {
+  handleMove(e.touches[0].clientY);
+}, { passive: false });
 
 window.addEventListener("touchend", () => {
   isHolding = false;
