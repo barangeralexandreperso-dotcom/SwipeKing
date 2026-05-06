@@ -44,7 +44,10 @@ max-height:420px;
 border-radius:12px;
 overflow:hidden;
 background:linear-gradient(180deg,#220000,#111,#010);
+transition:transform .3s ease;
 }
+
+#arena.horizontal{ transform:rotate(90deg); }
 
 #rope{
 position:absolute;
@@ -58,24 +61,6 @@ to bottom,
 #aa7744 10px,
 #aa7744 20px
 );
-transition:transform .05s linear;
-}
-
-#enemy{
-position:absolute;
-width:100%;
-height:100%;
-background:rgba(255,0,0,.18);
-opacity:0;
-}
-
-#marker{
-position:absolute;
-width:100%;
-height:6px;
-top:50%;
-background:white;
-box-shadow:0 0 10px white;
 }
 
 #end{
@@ -107,6 +92,13 @@ border-radius:10px;
 font-weight:bold;
 cursor:pointer;
 }
+#subtitle{
+opacity:.6;
+font-size:.9em;
+margin-bottom:6px;
+z-index:10;
+position:relative;
+}
 </style>
 </head>
 
@@ -114,20 +106,18 @@ cursor:pointer;
 
 <div id="counter">👁 0</div>
 <div id="title">👑 SWIPE KING</div>
-<div id="subtitle">A stress game by Alexandre Baranger (V0.0)</div>
+<div id="subtitle">A stress game by Alexandre Baranger V0.0</div>
 
 <div id="game">
 <div id="distance">0 cm</div>
-
 <div id="arena">
-<div id="enemy"></div>
 <div id="rope"></div>
-<div id="marker"></div>
 </div>
 </div>
 
 <div id="end"></div>
 
+<!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
@@ -144,89 +134,51 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// scores
-async function saveScore(name, score){
-  await addDoc(collection(db, "scores"), {
-    name,
-    score,
-    date: Date.now()
+window.saveScore = async (name, score)=>{
+  await addDoc(collection(db,"scores"),{
+    name, score, date:Date.now()
   });
-}
+};
 
-// leaderboard
-async function getScores(){
-  const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(10));
+window.getScores = async ()=>{
+  const q = query(collection(db,"scores"),orderBy("score","desc"),limit(10));
   const snap = await getDocs(q);
 
-  let html = "";
-  snap.forEach(doc=>{
-    const s = doc.data();
-    html += `<div>${s.name} - ${s.score} cm</div>`;
+  let html="";
+  snap.forEach(d=>{
+    let s=d.data();
+    html+=`<div>${s.name} - ${s.score} cm</div>`;
   });
-
   return html;
-}
+};
 
-// compteur
-async function incrementVisits(){
-  const ref = collection(db, "visits");
-  await addDoc(ref, { t: Date.now() });
+window.incrementVisits = async ()=>{
+  const ref = collection(db,"visits");
+  await addDoc(ref,{t:Date.now()});
   const snap = await getDocs(ref);
   return snap.size;
-}
-
-// expose
-window.saveScore = saveScore;
-window.getScores = getScores;
-window.incrementVisits = incrementVisits;
+};
 </script>
 
-<!-- 🎮 TON JEU -->
 <script>
-let swipeMode = "vertical";
-let modeThreshold = 25;  
-let modeStep = 50;       
 let distance=0;
-let lastY=null;
+let lastY=0;
+let lastX=0;
 let holding=false;
 let gameOver=false;
 
-let enemyForce=0.18;
+let swipeMode="vertical";
+let modeStep=50;
+let firstSwitch=25;
 
-function updateSwipeMode(){
-let level = Math.floor(distance / modeStep);
+let playerName="Anonyme";
 
-// premier changement plus tôt
-if(distance < modeStep){
-swipeMode = "vertical";
-}else{
-swipeMode = (level % 2 === 0) ? "vertical" : "horizontal";
-}
-}
-
-// 🧠 anti-triche state
-let lastDelta=0;
-let lastTime=Date.now();
-
-// 📱 orientation mode
-let horizontalMode = false;
-
-// 💾 pseudo auto
-let playerName = localStorage.getItem("swipe_name");
-if(!playerName || playerName === "null"){
-playerName = prompt("Ton pseudo ?");
-if(!playerName || playerName.trim() === ""){
-playerName = "Anonyme";
-}
-localStorage.setItem("swipe_name", playerName);
-}
-
-// 🎯 milestones
-let milestones = [500,1000,2000,5000,10000];
-let reached = new Set();
+// 🔥 équilibrage gameplay
+let enemyForce=0.08;      // beaucoup plus faible
+let gainMultiplier=0.12;  // swipe plus puissant
 
 const d=document.getElementById("distance");
-const end=document.getElementById("end");
+const arena=document.getElementById("arena");
 const rope=document.getElementById("rope");
 
 const audio=new (window.AudioContext||window.webkitAudioContext)();
@@ -234,180 +186,127 @@ const audio=new (window.AudioContext||window.webkitAudioContext)();
 function beep(f){
 let o=audio.createOscillator();
 let g=audio.createGain();
-o.connect(g);
-g.connect(audio.destination);
+o.connect(g);g.connect(audio.destination);
 o.frequency.value=f;
-g.gain.value=.04;
+g.gain.value=.03;
 o.start();
-o.stop(audio.currentTime+.06);
+o.stop(audio.currentTime+.04);
 }
 
-function uiSound(){
-beep(420);
-}
-
-function milestoneSound(){
-beep(800);
-setTimeout(()=>beep(1000),80);
-}
-
-/* 🔥 VISITE */
-window.addEventListener("load", ()=>{
-incrementVisits().then(count=>{
-document.getElementById("counter").textContent="👁 "+count;
+/* VISITS */
+window.addEventListener("load",()=>{
+incrementVisits().then(c=>{
+document.getElementById("counter").textContent="👁 "+c;
 });
 });
 
-function swipe(y){
+/* MODE SWITCH */
+function updateMode(){
+let level=Math.floor(distance/modeStep);
+
+if(distance<firstSwitch){
+swipeMode="vertical";
+arena.classList.remove("horizontal");
+return;
+}
+
+if(level%2===0){
+swipeMode="vertical";
+arena.classList.remove("horizontal");
+}else{
+swipeMode="horizontal";
+arena.classList.add("horizontal");
+}
+}
+
+/* SWIPE */
+function swipe(e){
 if(!holding||gameOver)return;
 
-let delta = y - lastY;
+let deltaV=e.clientY-lastY;
+let deltaH=e.clientX-lastX;
 
-// anti-triche
-let now = Date.now();
-let speed = Math.abs(delta / (now - lastTime + 1));
-if(speed > 2.5) return;
-if(delta > 120) return;
-
-// 🎯 SWIPE LOGIC CLEAN
-if(delta > 8){
-
-if(swipeMode === "vertical"){
-distance += delta * 0.04;
-}else{
-distance += Math.abs(delta) * 0.05;
-}
-
+// 🔥 filtre anti micro-mouvements
+if(swipeMode==="vertical"){
+if(Math.abs(deltaV)>6){
+distance += deltaV * gainMultiplier;
 beep(260);
-if(navigator.vibrate)navigator.vibrate(5);
 }
-
-// milestones
-for(let m of milestones){
-if(distance > m && !reached.has(m)){
-reached.add(m);
-showPopup("🔥 "+m+" cm !");
-milestoneSound();
+}else{
+if(Math.abs(deltaH)>6){
+distance += deltaH * gainMultiplier;
+beep(300);
 }
 }
 
-lastY = y;
-lastTime = now;
+lastY=e.clientY;
+lastX=e.clientX;
 }
 
-
-/* 🎯 popup */
-function showPopup(text){
-let el=document.createElement("div");
-el.textContent=text;
-el.style.position="fixed";
-el.style.top="20%";
-el.style.left="50%";
-el.style.transform="translateX(-50%)";
-el.style.background="rgba(0,0,0,0.8)";
-el.style.padding="10px 20px";
-el.style.borderRadius="12px";
-el.style.fontSize="1.2em";
-el.style.boxShadow="0 0 20px white";
-document.body.appendChild(el);
-
-setTimeout(()=>el.remove(),1200);
-}
-
-/* 🔥 UPDATE LOOP */
+/* UPDATE */
 function update(){
-document.getElementById("subtitle").textContent =
-swipeMode === "vertical"
-? "Swipe vertical 👆"
-: "Swipe horizontal 👉";
 d.textContent=Math.floor(distance)+" cm";
-updateSwipeMode();
 
+updateMode();
+
+// 🔥 descente BEAUCOUP plus douce
 distance -= enemyForce;
-if(distance<0)distance=0;
 
-// rope movement
-rope.style.transform=`translateY(${Math.sin(distance/10)*4 - enemyForce*30}px)`;
+// ❌ on empêche la chute trop brutale
+if(distance < 0) distance = 0;
+
+// 🎯 progression de difficulté MAIS capée
+enemyForce = Math.min(0.25, 0.08 + distance/30000);
+
+// rope effect stable
+rope.style.transform=`translateY(${Math.sin(distance/15)*3}px)`;
 
 document.body.style.background=`hsl(${distance%360},30%,5%)`;
-
-// 🌈 dynamic difficulty
-enemyForce = 0.18 + distance/20000;
 }
 
-/* 🎮 LOOP */
 function loop(){
 if(gameOver)return;
 update();
 requestAnimationFrame(loop);
 }
 
-/* 🏁 GAME OVER */
+/* GAME OVER */
 async function endGame(){
 if(gameOver)return;
 gameOver=true;
 
-let score = Math.floor(distance);
+let score=Math.floor(distance);
 
-// 💾 save
-await saveScore(playerName, score);
-
-// 🏆 leaderboard
-let leaderboard = await getScores();
-
-end.style.display="flex";
-end.innerHTML=`
-<div style="font-size:1.8em">GAME OVER</div>
-
-<div id="finalScore" style="font-size:2em;margin:10px 0;">0 cm</div>
-
-<div style="margin-top:10px">🏆 Classement mondial</div>
-
-<div id="board" style="
-margin-top:10px;
-opacity:0;
-transform:translateY(30px);
-transition:all .6s ease;
-">
-${leaderboard}
-</div>
-
-<button id="retry">Retry</button>
-`;
-
-document.getElementById("retry").onclick=()=>location.reload();
-
-/* 🔥 animation score */
-let display=0;
-let s=document.getElementById("finalScore");
-
-let int=setInterval(()=>{
-display+=Math.ceil(score/30);
-if(display>=score){
-display=score;
-clearInterval(int);
-
-// 🌈 leaderboard animation
-let b=document.getElementById("board");
-b.style.opacity="1";
-b.style.transform="translateY(0)";
+// 👉 pseudo UNIQUEMENT à la fin
+let name = prompt("Ton pseudo ?");
+if(!name || name.trim()===""){
+name="Anonyme";
 }
 
-s.textContent=display+" cm";
-},20);
+await saveScore(name,score);
+
+let leaderboard=await getScores();
+
+document.getElementById("end").style.display="flex";
+document.getElementById("end").innerHTML=`
+<div>GAME OVER</div>
+<div style="font-size:2em">${score} cm</div>
+<div>${leaderboard}</div>
+<button onclick="location.reload()">Retry</button>
+`;
 
 if(navigator.vibrate)navigator.vibrate([200,100,200]);
 beep(180);
 }
 
-/* 🎮 INPUT */
+/* INPUT */
 window.addEventListener("mousedown",e=>{
 holding=true;
 lastY=e.clientY;
-uiSound();
+lastX=e.clientX;
 });
 
-window.addEventListener("mousemove",e=>swipe(e.clientY));
+window.addEventListener("mousemove",swipe);
 
 window.addEventListener("mouseup",()=>{
 holding=false;
@@ -417,11 +316,11 @@ endGame();
 window.addEventListener("touchstart",e=>{
 holding=true;
 lastY=e.touches[0].clientY;
-uiSound();
+lastX=e.touches[0].clientX;
 },{passive:false});
 
 window.addEventListener("touchmove",e=>{
-swipe(e.touches[0].clientY);
+swipe(e.touches[0]);
 },{passive:false});
 
 window.addEventListener("touchend",()=>{
@@ -431,5 +330,6 @@ endGame();
 
 loop();
 </script>
+
 </body>
 </html>
