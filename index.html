@@ -183,6 +183,7 @@ window.incrementVisits = incrementVisits;
 
 <!-- 🎮 TON JEU -->
 <script>
+let swipeMode = "vertical";
 let distance=0;
 let lastY=null;
 let holding=false;
@@ -199,9 +200,11 @@ let horizontalMode = false;
 
 // 💾 pseudo auto
 let playerName = localStorage.getItem("swipe_name");
-if(!playerName){
+if(!playerName || playerName === "null"){
 playerName = prompt("Ton pseudo ?");
-if(!playerName) playerName = "Anonyme";
+if(!playerName || playerName.trim() === ""){
+playerName = "Anonyme";
+}
 localStorage.setItem("swipe_name", playerName);
 }
 
@@ -242,35 +245,32 @@ document.getElementById("counter").textContent="👁 "+count;
 });
 });
 
-/* 🧠 ANTI TRICHE + SWIPE ENGINE */
 function swipe(y){
 if(!holding||gameOver)return;
 
+let delta = y - lastY;
+
+// anti-triche conservé
 let now = Date.now();
-let delta=y-lastY;
-
 let speed = Math.abs(delta / (now - lastTime + 1));
-
-// 🚨 anti-bot
 if(speed > 2.5) return;
+
 if(delta > 120) return;
 
-// 🔁 orientation change random
-if(distance > 1200 && Math.random() < 0.003){
-horizontalMode = !horizontalMode;
-document.body.style.transform = horizontalMode ? "rotate(90deg)" : "rotate(0deg)";
+// 🎯 MODE VERTICAL / HORIZONTAL
+if(delta > 8){
+
+if(swipeMode === "vertical"){
+distance += delta * 0.04;
+}else{
+distance += Math.abs(delta) * 0.03; // horizontal feeling
 }
 
-// 🎮 movement
-if(delta>8){
-distance += delta * 0.04;
-
-// feedback
 beep(260);
 if(navigator.vibrate)navigator.vibrate(5);
 }
 
-// 🎯 milestones popup
+// milestones (inchangé)
 for(let m of milestones){
 if(distance > m && !reached.has(m)){
 reached.add(m);
@@ -279,10 +279,9 @@ milestoneSound();
 }
 }
 
-lastY=y;
-lastTime=now;
+lastY = y;
+lastTime = now;
 }
-
 /* 🎯 popup */
 function showPopup(text){
 let el=document.createElement("div");
@@ -303,7 +302,12 @@ setTimeout(()=>el.remove(),1200);
 
 /* 🔥 UPDATE LOOP */
 function update(){
+document.getElementById("subtitle").textContent =
+swipeMode === "vertical"
+? "Swipe vertical 👆"
+: "Swipe horizontal 👉";
 d.textContent=Math.floor(distance)+" cm";
+swipeMode = (Math.floor(distance / 50) % 2 === 0) ? "vertical" : "horizontal";
 
 distance -= enemyForce;
 if(distance<0)distance=0;
