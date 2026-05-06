@@ -184,12 +184,25 @@ window.incrementVisits = incrementVisits;
 <!-- 🎮 TON JEU -->
 <script>
 let swipeMode = "vertical";
+let modeThreshold = 25;  
+let modeStep = 50;       
 let distance=0;
 let lastY=null;
 let holding=false;
 let gameOver=false;
 
 let enemyForce=0.18;
+
+function updateSwipeMode(){
+let level = Math.floor(distance / modeStep);
+
+// premier changement plus tôt
+if(distance < modeStep){
+swipeMode = "vertical";
+}else{
+swipeMode = (level % 2 === 0) ? "vertical" : "horizontal";
+}
+}
 
 // 🧠 anti-triche state
 let lastDelta=0;
@@ -250,27 +263,26 @@ if(!holding||gameOver)return;
 
 let delta = y - lastY;
 
-// anti-triche conservé
+// anti-triche
 let now = Date.now();
 let speed = Math.abs(delta / (now - lastTime + 1));
 if(speed > 2.5) return;
-
 if(delta > 120) return;
 
-// 🎯 MODE VERTICAL / HORIZONTAL
+// 🎯 SWIPE LOGIC CLEAN
 if(delta > 8){
 
 if(swipeMode === "vertical"){
 distance += delta * 0.04;
 }else{
-distance += Math.abs(delta) * 0.03; // horizontal feeling
+distance += Math.abs(delta) * 0.05;
 }
 
 beep(260);
 if(navigator.vibrate)navigator.vibrate(5);
 }
 
-// milestones (inchangé)
+// milestones
 for(let m of milestones){
 if(distance > m && !reached.has(m)){
 reached.add(m);
@@ -282,6 +294,8 @@ milestoneSound();
 lastY = y;
 lastTime = now;
 }
+
+
 /* 🎯 popup */
 function showPopup(text){
 let el=document.createElement("div");
@@ -307,7 +321,7 @@ swipeMode === "vertical"
 ? "Swipe vertical 👆"
 : "Swipe horizontal 👉";
 d.textContent=Math.floor(distance)+" cm";
-swipeMode = (Math.floor(distance / 50) % 2 === 0) ? "vertical" : "horizontal";
+updateSwipeMode();
 
 distance -= enemyForce;
 if(distance<0)distance=0;
