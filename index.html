@@ -89,6 +89,15 @@ background:rgba(0,0,0,.95);
 z-index:9999;
 gap:12px;
 }
+#counter{
+position:fixed;
+top:10px;
+right:10px;
+background:rgba(0,0,0,0.6);
+padding:6px 10px;
+border-radius:8px;
+font-size:.9em;
+}
 
 button{
 padding:12px 18px;
@@ -101,7 +110,7 @@ cursor:pointer;
 </head>
 
 <body>
-
+<div id="counter">👁 0</div>
 <div id="title">👑 SWIPE KING</div>
 <div id="subtitle">A stress game by Alexandre Baranger</div>
 
@@ -118,12 +127,17 @@ cursor:pointer;
 <div id="end"></div>
 
 <script>
+fetch("https://api.countapi.xyz/hit/swipe-king/visits")
+.then(res => res.json())
+.then(data => {
+document.getElementById("counter").textContent = "👁 " + data.value;
+});
 let distance=0;
 let lastY=null;
 let holding=false;
 let gameOver=false;
 
-/* 🔥 IA TAPIS ROULANT */
+
 let enemyForce=0.18;
 
 const d=document.getElementById("distance");
@@ -143,7 +157,7 @@ o.start();
 o.stop(audio.currentTime+.05);
 }
 
-/* SWIPE */
+
 function swipe(y){
 if(!holding||gameOver)return;
 
@@ -161,11 +175,11 @@ lastY=y;
 function update(){
 d.textContent=Math.floor(distance)+" cm";
 
-/* 🔥 IA FAIT RECULER */
+
 distance -= enemyForce;
 if(distance<0)distance=0;
 
-/* 🔥 effet tapis roulant visuel */
+
 rope.style.transform=`translateY(${Math.sin(distance/10)*4 - enemyForce*30}px)`;
 
 document.body.style.background=`hsl(${distance%360},30%,5%)`;
@@ -177,7 +191,7 @@ update();
 requestAnimationFrame(loop);
 }
 
-/* FIN */
+
 function endGame(){
 if(gameOver)return;
 gameOver=true;
@@ -202,7 +216,7 @@ if(navigator.vibrate)navigator.vibrate([200,100,200]);
 beep(180);
 }
 
-/* INPUT */
+
 window.addEventListener("mousedown",e=>{
 holding=true;
 lastY=e.clientY;
