@@ -114,7 +114,7 @@ cursor:pointer;
 
 <div id="counter">👁 0</div>
 <div id="title">👑 SWIPE KING</div>
-<div id="subtitle">A stress game by Alexandre Baranger</div>
+<div id="subtitle">A stress game by Alexandre Baranger (V0.0)</div>
 
 <div id="game">
 <div id="distance">0 cm</div>
@@ -190,6 +190,25 @@ let gameOver=false;
 
 let enemyForce=0.18;
 
+// 🧠 anti-triche state
+let lastDelta=0;
+let lastTime=Date.now();
+
+// 📱 orientation mode
+let horizontalMode = false;
+
+// 💾 pseudo auto
+let playerName = localStorage.getItem("swipe_name");
+if(!playerName){
+playerName = prompt("Ton pseudo ?");
+if(!playerName) playerName = "Anonyme";
+localStorage.setItem("swipe_name", playerName);
+}
+
+// 🎯 milestones
+let milestones = [500,1000,2000,5000,10000];
+let reached = new Set();
+
 const d=document.getElementById("distance");
 const end=document.getElementById("end");
 const rope=document.getElementById("rope");
@@ -202,68 +221,136 @@ let g=audio.createGain();
 o.connect(g);
 g.connect(audio.destination);
 o.frequency.value=f;
-g.gain.value=.05;
+g.gain.value=.04;
 o.start();
-o.stop(audio.currentTime+.05);
+o.stop(audio.currentTime+.06);
 }
 
-/* 🔥 compteur Firebase */
+function uiSound(){
+beep(420);
+}
+
+function milestoneSound(){
+beep(800);
+setTimeout(()=>beep(1000),80);
+}
+
+/* 🔥 VISITE */
 window.addEventListener("load", ()=>{
 incrementVisits().then(count=>{
-document.getElementById("counter").textContent = "👁 " + count;
+document.getElementById("counter").textContent="👁 "+count;
 });
 });
 
+/* 🧠 ANTI TRICHE + SWIPE ENGINE */
 function swipe(y){
 if(!holding||gameOver)return;
 
+let now = Date.now();
 let delta=y-lastY;
 
+let speed = Math.abs(delta / (now - lastTime + 1));
+
+// 🚨 anti-bot
+if(speed > 2.5) return;
+if(delta > 120) return;
+
+// 🔁 orientation change random
+if(distance > 1200 && Math.random() < 0.003){
+horizontalMode = !horizontalMode;
+document.body.style.transform = horizontalMode ? "rotate(90deg)" : "rotate(0deg)";
+}
+
+// 🎮 movement
 if(delta>8){
 distance += delta * 0.04;
+
+// feedback
 beep(260);
 if(navigator.vibrate)navigator.vibrate(5);
 }
 
-lastY=y;
+// 🎯 milestones popup
+for(let m of milestones){
+if(distance > m && !reached.has(m)){
+reached.add(m);
+showPopup("🔥 "+m+" cm !");
+milestoneSound();
+}
 }
 
+lastY=y;
+lastTime=now;
+}
+
+/* 🎯 popup */
+function showPopup(text){
+let el=document.createElement("div");
+el.textContent=text;
+el.style.position="fixed";
+el.style.top="20%";
+el.style.left="50%";
+el.style.transform="translateX(-50%)";
+el.style.background="rgba(0,0,0,0.8)";
+el.style.padding="10px 20px";
+el.style.borderRadius="12px";
+el.style.fontSize="1.2em";
+el.style.boxShadow="0 0 20px white";
+document.body.appendChild(el);
+
+setTimeout(()=>el.remove(),1200);
+}
+
+/* 🔥 UPDATE LOOP */
 function update(){
 d.textContent=Math.floor(distance)+" cm";
 
 distance -= enemyForce;
 if(distance<0)distance=0;
 
+// rope movement
 rope.style.transform=`translateY(${Math.sin(distance/10)*4 - enemyForce*30}px)`;
+
 document.body.style.background=`hsl(${distance%360},30%,5%)`;
+
+// 🌈 dynamic difficulty
+enemyForce = 0.18 + distance/20000;
 }
 
+/* 🎮 LOOP */
 function loop(){
 if(gameOver)return;
 update();
 requestAnimationFrame(loop);
 }
 
+/* 🏁 GAME OVER */
 async function endGame(){
 if(gameOver)return;
 gameOver=true;
 
 let score = Math.floor(distance);
 
-let name = prompt("Ton nom ?");
-if(!name) name = "Anonyme";
+// 💾 save
+await saveScore(playerName, score);
 
-await saveScore(name, score);
+// 🏆 leaderboard
 let leaderboard = await getScores();
 
 end.style.display="flex";
-
 end.innerHTML=`
 <div style="font-size:1.8em">GAME OVER</div>
-<div>Distance: ${score} cm</div>
+
+<div id="finalScore" style="font-size:2em;margin:10px 0;">0 cm</div>
 
 <div style="margin-top:10px">🏆 Classement mondial</div>
-<div style="font-size:.9em;opacity:.8">
+
+<div id="board" style="
+margin-top:10px;
+opacity:0;
+transform:translateY(30px);
+transition:all .6s ease;
+">
 ${leaderboard}
 </div>
 
@@ -272,13 +359,34 @@ ${leaderboard}
 
 document.getElementById("retry").onclick=()=>location.reload();
 
+/* 🔥 animation score */
+let display=0;
+let s=document.getElementById("finalScore");
+
+let int=setInterval(()=>{
+display+=Math.ceil(score/30);
+if(display>=score){
+display=score;
+clearInterval(int);
+
+// 🌈 leaderboard animation
+let b=document.getElementById("board");
+b.style.opacity="1";
+b.style.transform="translateY(0)";
+}
+
+s.textContent=display+" cm";
+},20);
+
 if(navigator.vibrate)navigator.vibrate([200,100,200]);
 beep(180);
 }
 
+/* 🎮 INPUT */
 window.addEventListener("mousedown",e=>{
 holding=true;
 lastY=e.clientY;
+uiSound();
 });
 
 window.addEventListener("mousemove",e=>swipe(e.clientY));
@@ -291,6 +399,7 @@ endGame();
 window.addEventListener("touchstart",e=>{
 holding=true;
 lastY=e.touches[0].clientY;
+uiSound();
 },{passive:false});
 
 window.addEventListener("touchmove",e=>{
@@ -304,6 +413,5 @@ endGame();
 
 loop();
 </script>
-
 </body>
 </html>
