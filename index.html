@@ -127,10 +127,13 @@ cursor:pointer;
 <div id="end"></div>
 
 <script>
-fetch("https://api.countapi.xyz/hit/swipe-king/visits")
+fetch("https://api.countapi.xyz/hit/swipe-king/visits?nocache=" + Date.now())
 .then(res => res.json())
 .then(data => {
 document.getElementById("counter").textContent = "👁 " + data.value;
+})
+.catch(err => {
+console.error("Erreur compteur :", err);
 });
 let distance=0;
 let lastY=null;
