@@ -1,39 +1,44 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-
-  <title>Swipe King</title>
-
-  <!-- CSS -->
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1.0,
+user-scalable=no">
+<title>Swipe King</title>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
 <div id="counter">👁 0</div>
-
 <div id="title">👑 SWIPE KING</div>
-<div id="subtitle">
-  A stress game by Alexandre Baranger V0.0
-</div>
-
-<div id="game">
-  <div id="distance">0 cm</div>
-
-  <div id="arena">
-    <div id="rope"></div>
-  </div>
-</div>
-
+<div id="subtitle">A stress game by Alexandre Baranger V0.0</div>
+<div id="game"><div id="distance">0 cm</div><div id="arena"><div id="rope"></div></div></div>
 <div id="end"></div>
 
-<!-- Firebase -->
-<script type="module" src="firebase.js"></script>
-
-<!-- Jeu -->
+<script type="module">
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import {getFirestore,collection,addDoc,getDocs,query,orderBy,limit}
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+const firebaseConfig = {
+apiKey: "AIzaSyB6z3ajkXJr7NIj7PmAkREA9uieAttGyk0",
+authDomain: "swipe-king-6f95b.firebaseapp.com",
+projectId: "swipe-king-6f95b",
+storageBucket: "swipe-king-6f95b.firebasestorage.app",
+messagingSenderId: "149048703091",
+appId: "1:149048703091:web:8bd7b61d44648fd4a7d206"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+window.saveScore = async (name, score)=>{await addDoc(collection(db,"scores"),{name,score,date:Date.now()});};
+window.getScores = async ()=>{const q = query(collection(db,"scores"),orderBy("score","desc"),limit(10));
+const snap = await getDocs(q);let html="";snap.forEach(d=>{let s=d.data();html += `<div>${s.name} - ${s.score} cm</div>`;});
+return html;};
+window.incrementVisits = async ()=>{const ref = collection(db,"visits");await addDoc(ref,{t:Date.now()});const snap = await getDocs(ref);return snap.size;
+};
+</script>
 <script src="script.js"></script>
-
 </body>
 </html>
