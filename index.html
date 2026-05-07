@@ -1,335 +1,39 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Swipe King</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-<style>
-body{
-margin:0;
-overflow:hidden;
-font-family:Arial;
-background:#0b0b0b;
-color:white;
-text-align:center;
-touch-action:none;
-display:flex;
-flex-direction:column;
-min-height:100dvh;
-padding-top:env(safe-area-inset-top);
-padding-bottom:env(safe-area-inset-bottom);
-}
+  <title>Swipe King</title>
 
-#title{font-size:2em;margin-top:6px}
-#subtitle{opacity:.6;font-size:.9em;margin-bottom:6px}
-
-#game{
-flex:1;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-gap:8px;
-}
-
-#distance{font-size:2.3em}
-
-#arena{
-position:relative;
-width:28vw;
-height:52vh;
-max-width:110px;
-max-height:420px;
-border-radius:12px;
-overflow:hidden;
-background:linear-gradient(180deg,#220000,#111,#010);
-transition:transform .3s ease;
-}
-
-#arena.horizontal{ transform:rotate(90deg); }
-
-#rope{
-position:absolute;
-width:100%;
-height:200%;
-top:-50%;
-background:repeating-linear-gradient(
-to bottom,
-#ffcc88,
-#ffcc88 10px,
-#aa7744 10px,
-#aa7744 20px
-);
-}
-
-#end{
-position:fixed;
-inset:0;
-display:none;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-background:rgba(0,0,0,.95);
-z-index:9999;
-gap:12px;
-}
-
-#counter{
-position:fixed;
-top:10px;
-right:10px;
-background:rgba(0,0,0,0.6);
-padding:6px 10px;
-border-radius:8px;
-font-size:.9em;
-}
-
-button{
-padding:12px 18px;
-border:none;
-border-radius:10px;
-font-weight:bold;
-cursor:pointer;
-}
-#subtitle{
-opacity:.6;
-font-size:.9em;
-margin-bottom:6px;
-z-index:10;
-position:relative;
-}
-</style>
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <div id="counter">👁 0</div>
+
 <div id="title">👑 SWIPE KING</div>
-<div id="subtitle">A stress game by Alexandre Baranger V0.0</div>
+<div id="subtitle">
+  A stress game by Alexandre Baranger V0.0
+</div>
 
 <div id="game">
-<div id="distance">0 cm</div>
-<div id="arena">
-<div id="rope"></div>
-</div>
+  <div id="distance">0 cm</div>
+
+  <div id="arena">
+    <div id="rope"></div>
+  </div>
 </div>
 
 <div id="end"></div>
 
-<!-- FIREBASE -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+<!-- Firebase -->
+<script type="module" src="firebase.js"></script>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyB6z3ajkXJr7NIj7PmAkREA9uieAttGyk0",
-  authDomain: "swipe-king-6f95b.firebaseapp.com",
-  projectId: "swipe-king-6f95b",
-  storageBucket: "swipe-king-6f95b.firebasestorage.app",
-  messagingSenderId: "149048703091",
-  appId: "1:149048703091:web:8bd7b61d44648fd4a7d206"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.saveScore = async (name, score)=>{
-  await addDoc(collection(db,"scores"),{
-    name, score, date:Date.now()
-  });
-};
-
-window.getScores = async ()=>{
-  const q = query(collection(db,"scores"),orderBy("score","desc"),limit(10));
-  const snap = await getDocs(q);
-
-  let html="";
-  snap.forEach(d=>{
-    let s=d.data();
-    html+=`<div>${s.name} - ${s.score} cm</div>`;
-  });
-  return html;
-};
-
-window.incrementVisits = async ()=>{
-  const ref = collection(db,"visits");
-  await addDoc(ref,{t:Date.now()});
-  const snap = await getDocs(ref);
-  return snap.size;
-};
-</script>
-
-<script>
-let distance=0;
-let lastY=0;
-let lastX=0;
-let holding=false;
-let gameOver=false;
-
-let swipeMode="vertical";
-let modeStep=50;
-let firstSwitch=25;
-
-let playerName="Anonyme";
-
-// 🔥 équilibrage gameplay
-let enemyForce=0.08;      // beaucoup plus faible
-let gainMultiplier=0.12;  // swipe plus puissant
-
-const d=document.getElementById("distance");
-const arena=document.getElementById("arena");
-const rope=document.getElementById("rope");
-
-const audio=new (window.AudioContext||window.webkitAudioContext)();
-
-function beep(f){
-let o=audio.createOscillator();
-let g=audio.createGain();
-o.connect(g);g.connect(audio.destination);
-o.frequency.value=f;
-g.gain.value=.03;
-o.start();
-o.stop(audio.currentTime+.04);
-}
-
-/* VISITS */
-window.addEventListener("load",()=>{
-incrementVisits().then(c=>{
-document.getElementById("counter").textContent="👁 "+c;
-});
-});
-
-/* MODE SWITCH */
-function updateMode(){
-let level=Math.floor(distance/modeStep);
-
-if(distance<firstSwitch){
-swipeMode="vertical";
-arena.classList.remove("horizontal");
-return;
-}
-
-if(level%2===0){
-swipeMode="vertical";
-arena.classList.remove("horizontal");
-}else{
-swipeMode="horizontal";
-arena.classList.add("horizontal");
-}
-}
-
-/* SWIPE */
-function swipe(e){
-if(!holding||gameOver)return;
-
-let deltaV=e.clientY-lastY;
-let deltaH=e.clientX-lastX;
-
-// 🔥 filtre anti micro-mouvements
-if(swipeMode==="vertical"){
-if(Math.abs(deltaV)>6){
-distance += deltaV * gainMultiplier;
-beep(260);
-}
-}else{
-if(Math.abs(deltaH)>6){
-distance += deltaH * gainMultiplier;
-beep(300);
-}
-}
-
-lastY=e.clientY;
-lastX=e.clientX;
-}
-
-/* UPDATE */
-function update(){
-d.textContent=Math.floor(distance)+" cm";
-
-updateMode();
-
-// 🔥 descente BEAUCOUP plus douce
-distance -= enemyForce;
-
-// ❌ on empêche la chute trop brutale
-if(distance < 0) distance = 0;
-
-// 🎯 progression de difficulté MAIS capée
-enemyForce = Math.min(0.25, 0.08 + distance/30000);
-
-// rope effect stable
-rope.style.transform=`translateY(${Math.sin(distance/15)*3}px)`;
-
-document.body.style.background=`hsl(${distance%360},30%,5%)`;
-}
-
-function loop(){
-if(gameOver)return;
-update();
-requestAnimationFrame(loop);
-}
-
-/* GAME OVER */
-async function endGame(){
-if(gameOver)return;
-gameOver=true;
-
-let score=Math.floor(distance);
-
-// 👉 pseudo UNIQUEMENT à la fin
-let name = prompt("Ton pseudo ?");
-if(!name || name.trim()===""){
-name="Anonyme";
-}
-
-await saveScore(name,score);
-
-let leaderboard=await getScores();
-
-document.getElementById("end").style.display="flex";
-document.getElementById("end").innerHTML=`
-<div>GAME OVER</div>
-<div style="font-size:2em">${score} cm</div>
-<div>${leaderboard}</div>
-<button onclick="location.reload()">Retry</button>
-`;
-
-if(navigator.vibrate)navigator.vibrate([200,100,200]);
-beep(180);
-}
-
-/* INPUT */
-window.addEventListener("mousedown",e=>{
-holding=true;
-lastY=e.clientY;
-lastX=e.clientX;
-});
-
-window.addEventListener("mousemove",swipe);
-
-window.addEventListener("mouseup",()=>{
-holding=false;
-endGame();
-});
-
-window.addEventListener("touchstart",e=>{
-holding=true;
-lastY=e.touches[0].clientY;
-lastX=e.touches[0].clientX;
-},{passive:false});
-
-window.addEventListener("touchmove",e=>{
-swipe(e.touches[0]);
-},{passive:false});
-
-window.addEventListener("touchend",()=>{
-holding=false;
-endGame();
-});
-
-loop();
-</script>
+<!-- Jeu -->
+<script src="script.js"></script>
 
 </body>
 </html>
