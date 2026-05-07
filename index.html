@@ -12,13 +12,25 @@ user-scalable=no">
 <body>
 <div id="counter">👁 0</div>
 <div id="title">👑 SWIPE KING</div>
-<div id="subtitle">A game by Alexandre Baranger V0.013</div>
+<div id="subtitle">A game by Alexandre Baranger V0.014</div>
 <div id="game"><div id="distance">0 cm</div><div id="arena"><div id="rope"></div></div></div>
 <div id="end"></div>
 <script type="module">
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import {getFirestore,collection,addDoc,getDocs,query,orderBy,limit}
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  doc,
+  updateDoc,
+  increment,
+  getDoc
+}
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 import {getAuth,signInAnonymously}
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
@@ -47,13 +59,15 @@ window.getScores = async ()=>{
   snap.forEach(d=>{let s=d.data();html += `<div>${s.name} - ${s.score} cm</div>`;});
   return html;
 };
-window.incrementVisits = async ()=>{
+window.incrementVisits = async () => {
   const user = auth.currentUser;
   if (!user) return 0;
-  const ref = collection(db,"visits");
-  await addDoc(ref,{uid:user.uid,t:Date.now()});
-  const snap = await getDocs(ref);
-  return snap.size;
+  const ref = doc(db, "stats", "global");
+  await updateDoc(ref, {
+    visits: increment(1)
+  });
+  const snap = await getDoc(ref);
+  return snap.data().visits;
 };
 </script>
 <script src="script.js"></script>
