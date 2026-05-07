@@ -26,10 +26,20 @@ let transitionPause=false;
 let playerName="Anonyme";
 
 // force ennemie
-let enemyForce=0.04;
+let enemyForce=0.08;
 
 // gain joueur
-let gainMultiplier=0.12;
+// très rapide
+//let gainMultiplier=0.08;
+
+// équilibré arcade
+//let gainMultiplier=0.04;
+
+// réaliste "cm"
+let gainMultiplier=0.025;
+
+// très difficile
+//let gainMultiplier=0.015;
 
 // =========================
 // ELEMENTS DOM
