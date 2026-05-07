@@ -12,7 +12,7 @@ user-scalable=no">
 <body>
 <div id="counter">👁 0</div>
 <div id="title">👑 SWIPE KING</div>
-<div id="subtitle">A game by Alexandre Baranger V0.014</div>
+<div id="subtitle">A game by Alexandre Baranger V0.015</div>
 <div id="game"><div id="distance">0 cm</div><div id="arena"><div id="rope"></div></div></div>
 <div id="end"></div>
 <script type="module">
@@ -29,7 +29,8 @@ import {
   doc,
   updateDoc,
   increment,
-  getDoc
+  getDoc,
+  setDoc
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 import {getAuth,signInAnonymously}
@@ -63,9 +64,16 @@ window.incrementVisits = async () => {
   const user = auth.currentUser;
   if (!user) return 0;
   const ref = doc(db, "stats", "global");
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    await setDoc(ref, { visits: 1 });
+    return 1;
+  }
   await updateDoc(ref, {
     visits: increment(1)
   });
+  return (await getDoc(ref)).data().visits;
+};
   const snap = await getDoc(ref);
   return snap.data().visits;
 };
