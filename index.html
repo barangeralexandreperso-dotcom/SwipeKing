@@ -12,7 +12,7 @@ user-scalable=no">
 <body>
 <div id="counter">👁 0</div>
 <div id="title">👑 SWIPE KING</div>
-<div id="subtitle">A game by Alexandre Baranger V0.016</div>
+<div id="subtitle">A game by Alexandre Baranger V0.017</div>
 <div id="game"><div id="distance">0 cm</div><div id="arena"><div id="rope"></div></div></div>
 <div id="end"></div>
 <script type="module">
@@ -61,17 +61,23 @@ window.getScores = async ()=>{
   return html;
 };
 window.incrementVisits = async () => {
+
   const ref = doc(db, "stats", "global");
+
   const snap = await getDoc(ref);
-  if (!snap.exists()) {await setDoc(ref, { visits: 1 });return 1;}
-  await updateDoc(ref, {visits: increment(1)});
+
+  if (!snap.exists()) {
+    await setDoc(ref, { visits: 1 });
+    return 1;
+  }
+
+  await updateDoc(ref, {
+    visits: increment(1)
+  });
+
   const updated = await getDoc(ref);
-  return updated.data().visits;
+  return updated.data().visits || 0;
 };
-window.addEventListener("load", async () => {
-  const c = await incrementVisits();
-  document.getElementById("counter").textContent = "👁 " + c;
-});
 </script>
 <script src="script.js"></script>
 </body>
