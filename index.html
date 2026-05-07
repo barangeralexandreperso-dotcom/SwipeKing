@@ -12,7 +12,7 @@ user-scalable=no">
 <body>
 <div id="counter">👁 0</div>
 <div id="title">👑 SWIPE KING</div>
-<div id="subtitle">A game by Alexandre Baranger V0.017</div>
+<div id="subtitle">A game by Alexandre Baranger V0.019</div>
 <div id="game"><div id="distance">0 cm</div><div id="arena"><div id="rope"></div></div></div>
 <div id="end"></div>
 <script type="module">
@@ -64,19 +64,26 @@ window.incrementVisits = async () => {
 
   const ref = doc(db, "stats", "global");
 
-  const snap = await getDoc(ref);
+  try {
+    const snap = await getDoc(ref);
 
-  if (!snap.exists()) {
-    await setDoc(ref, { visits: 1 });
-    return 1;
+    if (!snap.exists()) {
+      await setDoc(ref, { visits: 1 });
+      return 1;
+    }
+
+    const current = snap.data()?.visits ?? 0;
+
+    await setDoc(ref, {
+      visits: current + 1
+    });
+
+    return current + 1;
+
+  } catch (e) {
+    console.error("VISITS ERROR:", e);
+    return 0;
   }
-
-  await updateDoc(ref, {
-    visits: increment(1)
-  });
-
-  const updated = await getDoc(ref);
-  return updated.data().visits || 0;
 };
 </script>
 <script src="script.js"></script>

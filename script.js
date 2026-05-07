@@ -53,7 +53,15 @@ o.stop(audio.currentTime+.04);
 // =========================
 // VISITES
 // =========================
-window.addEventListener("load",()=>{incrementVisits().then(c=>{document.getElementById("counter").textContent="👁 "+c;});});
+setTimeout(async () => {
+  if (typeof incrementVisits !== "function") {
+    console.error("incrementVisits pas chargé");
+    return;
+  }
+
+  const c = await incrementVisits();
+  document.getElementById("counter").textContent = "👁 " + c;
+}, 500);
 
 // =========================
 // CALCUL DIFFICULTE
