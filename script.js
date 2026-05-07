@@ -3,34 +3,32 @@
 // =========================
 
 let distance=0;
+
 let lastY=0;
 let lastX=0;
 
 let holding=false;
 let gameOver=false;
 
-// mode actuel : vertical ou horizontal
+// mode actuel
 let swipeMode="vertical";
 
-// changement de direction tous les X points
-let modeStep=50;
+// prochain seuil de changement
+let nextSwitch=250;
 
-// premier changement après 25
-let firstSwitch=25;
-
-// pause pendant changement de mode
-let transitionPause=false;
-
-// dernier mode connu
+// historique mode
 let lastMode="vertical";
+
+// pause pendant transition
+let transitionPause=false;
 
 // pseudo joueur
 let playerName="Anonyme";
 
-// force de l'ennemi
+// force ennemie
 let enemyForce=0.04;
 
-// multiplicateur de gain
+// gain joueur
 let gainMultiplier=0.12;
 
 // =========================
@@ -38,7 +36,9 @@ let gainMultiplier=0.12;
 // =========================
 
 const d=document.getElementById("distance");
+
 const arena=document.getElementById("arena");
+
 const rope=document.getElementById("rope");
 
 // =========================
@@ -48,11 +48,11 @@ const rope=document.getElementById("rope");
 const audio=
 new (window.AudioContext||window.webkitAudioContext)();
 
-// empêche le scroll tactile mobile
+// bloque scroll mobile
 document.body.style.touchAction="none";
 
 // =========================
-// PETIT BIP AUDIO
+// PETIT SON
 // =========================
 
 function beep(f){
@@ -75,7 +75,7 @@ o.stop(audio.currentTime+.04);
 }
 
 // =========================
-// COMPTEUR DE VISITES
+// VISITES
 // =========================
 
 window.addEventListener("load",()=>{
@@ -88,56 +88,81 @@ document.getElementById("counter").textContent="👁 "+c;
 });
 
 // =========================
-// GESTION CHANGEMENT MODE
+// CALCUL DIFFICULTE
+// =========================
+
+function getStepSize(){
+
+// progression exponentielle
+
+if(distance<1500){
+
+return 250;
+}
+
+if(distance<2500){
+
+return 200;
+}
+
+if(distance<4000){
+
+return 150;
+}
+
+if(distance<6000){
+
+return 120;
+}
+
+return 100;
+}
+
+// =========================
+// CHANGEMENT MODE
 // =========================
 
 function updateMode(){
 
-let level=Math.floor(distance/modeStep);
+// si on dépasse le prochain seuil
+if(distance>=nextSwitch){
 
-// début toujours vertical
-if(distance<firstSwitch){
+// inverse mode
+swipeMode=
+swipeMode==="vertical"
+?"horizontal"
+:"vertical";
 
-swipeMode="vertical";
-
-arena.classList.remove("horizontal");
-
-return;
-}
-
-// alterne vertical/horizontal
-let newMode=level%2===0?"vertical":"horizontal";
-
-// si changement
-if(newMode!==lastMode){
-
+// transition
 transitionPause=true;
 
-swipeMode=newMode;
-
-// classe CSS
-if(swipeMode==="vertical"){
-
-arena.classList.remove("horizontal");
-}
-else{
+// css
+if(swipeMode==="horizontal"){
 
 arena.classList.add("horizontal");
 }
+else{
 
-lastMode=newMode;
+arena.classList.remove("horizontal");
+}
 
-// petite pause pour laisser le temps au joueur
+// nouveau seuil dynamique
+nextSwitch += getStepSize();
+
+// mémorise mode
+lastMode=swipeMode;
+
+// temps pour réagir
 setTimeout(()=>{
 
 transitionPause=false;
 
-},400);
+},500);
 }
 }
 
 // =========================
-// DETECTION SWIPE
+// SWIPE
 // =========================
 
 function swipe(e){
@@ -146,11 +171,18 @@ if(!holding || gameOver || transitionPause)return;
 
 // position actuelle
 let currentY=e.clientY;
+
 let currentX=e.clientX;
 
-// différence depuis dernière frame
-let deltaV=Math.abs(currentY-lastY);
-let deltaH=Math.abs(currentX-lastX);
+// delta réel
+let deltaY=currentY-lastY;
+
+let deltaX=currentX-lastX;
+
+// valeurs absolues
+let absY=Math.abs(deltaY);
+
+let absX=Math.abs(deltaX);
 
 // =========================
 // MODE VERTICAL
@@ -158,10 +190,10 @@ let deltaH=Math.abs(currentX-lastX);
 
 if(swipeMode==="vertical"){
 
-if(deltaV>2){
+// ignore si horizontal dominant
+if(absY>absX && absY>2){
 
-// ajoute dans les 2 sens
-distance += deltaV*(gainMultiplier*2);
+distance += absY*(gainMultiplier*2);
 
 beep(260);
 }
@@ -173,10 +205,10 @@ beep(260);
 
 else{
 
-if(deltaH>2){
+// ignore si vertical dominant
+if(absX>absY && absX>2){
 
-// ajoute dans les 2 sens
-distance += deltaH*(gainMultiplier*2);
+distance += absX*(gainMultiplier*2);
 
 beep(300);
 }
@@ -184,6 +216,7 @@ beep(300);
 
 // sauvegarde position
 lastY=currentY;
+
 lastX=currentX;
 }
 
@@ -193,23 +226,28 @@ lastX=currentX;
 
 function update(){
 
-// affichage score
-d.textContent=Math.floor(distance)+" cm";
+// score affiché
+d.textContent=
+Math.floor(distance)+" cm";
 
-// gestion mode
+// update mode
 updateMode();
 
 // force ennemie
 distance -= enemyForce;
 
-// empêche score négatif
+// empêche négatif
 if(distance<0){
 
 distance=0;
 }
 
 // difficulté progressive
-enemyForce=Math.min(0.25,0.04+distance/30000);
+enemyForce=
+Math.min(
+0.25,
+0.04+distance/30000
+);
 
 // animation corde
 rope.style.transform=
@@ -221,7 +259,7 @@ document.body.style.background=
 }
 
 // =========================
-// BOUCLE PRINCIPALE
+// BOUCLE
 // =========================
 
 function loop(){
@@ -234,7 +272,7 @@ requestAnimationFrame(loop);
 }
 
 // =========================
-// FIN DE PARTIE
+// GAME OVER
 // =========================
 
 async function endGame(){
@@ -245,7 +283,7 @@ gameOver=true;
 
 let score=Math.floor(distance);
 
-// demande pseudo
+// pseudo
 let name=prompt("Ton pseudo ?");
 
 if(!name || name.trim()===""){
@@ -253,13 +291,14 @@ if(!name || name.trim()===""){
 name="Anonyme";
 }
 
-// sauvegarde score
+// sauvegarde
 await saveScore(name,score);
 
-// récup leaderboard
-let leaderboard=await getScores();
+// leaderboard
+let leaderboard=
+await getScores();
 
-// affiche écran fin
+// affichage
 document.getElementById("end").style.display="flex";
 
 document.getElementById("end").innerHTML=`
@@ -268,13 +307,13 @@ document.getElementById("end").innerHTML=`
 <div>${leaderboard}</div>
 <button onclick="location.reload()">Retry</button>`;
 
-// vibration mobile
+// vibration
 if(navigator.vibrate){
 
 navigator.vibrate([200,100,200]);
 }
 
-// son game over
+// son fin
 beep(180);
 }
 
@@ -301,7 +340,7 @@ endGame();
 });
 
 // =========================
-// EVENTS TACTILES MOBILE
+// EVENTS MOBILE
 // =========================
 
 window.addEventListener("touchstart",e=>{
@@ -316,7 +355,6 @@ lastX=e.touches[0].clientX;
 
 window.addEventListener("touchmove",e=>{
 
-// empêche scroll mobile
 e.preventDefault();
 
 swipe(e.touches[0]);
@@ -331,7 +369,7 @@ endGame();
 });
 
 // =========================
-// DEMARRAGE JEU
+// START
 // =========================
 
 loop();
