@@ -14,6 +14,7 @@ let playerName="Anonyme";
 let enemyForce=0.1;
 let timeLeft = 10;
 let lastFrame = performance.now();
+let bonusCount = 0;
 
 // gain joueur
 // très rapide
@@ -73,14 +74,20 @@ return 100;
 // CHANGEMENT MODE
 // =========================
 function updateMode(){
-if(distance>=nextSwitch){swipeMode=swipeMode==="vertical"?"horizontal":"vertical";
-transitionPause=true;
+if(distance >= nextSwitch){swipeMode = swipeMode==="vertical"?"horizontal":"vertical";
+transitionPause = true;
 if(swipeMode==="horizontal"){arena.classList.add("horizontal");}
 else{arena.classList.remove("horizontal");}
-timeLeft += 5;
-showTimeBonus(5);
+
+// =========================
+// BONUS TEMPS
+// =========================
+bonusCount++;
+if(bonusCount === 1){timeLeft += 5;showTimeBonus(5);}
+else if(bonusCount % 3 === 0){timeLeft += 3;showTimeBonus(3);}
+if(distance > 4000 && bonusCount % 5 === 0){timeLeft += 2;showTimeBonus(2);}
 nextSwitch += getStepSize();
-lastMode=swipeMode;
+lastMode = swipeMode;
 setTimeout(()=>{transitionPause=false;},500);}}
 
 // =========================
