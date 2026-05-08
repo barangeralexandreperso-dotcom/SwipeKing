@@ -11,8 +11,8 @@ let nextSwitch=250;
 let lastMode="vertical";
 let transitionPause=false;
 let playerName="Anonyme";
-let enemyForce=0.08;
-let timeLeft = 30;
+let enemyForce=0.1;
+let timeLeft = 10;
 let lastFrame = performance.now();
 
 // gain joueur
@@ -23,10 +23,10 @@ let lastFrame = performance.now();
 //let gainMultiplier=0.04;
 
 // réaliste "cm"
-let gainMultiplier=0.025;
+//let gainMultiplier=0.025;
 
 // très difficile
-//let gainMultiplier=0.015;
+let gainMultiplier=0.015;
 
 // =========================
 // ELEMENTS DOM
@@ -77,8 +77,8 @@ if(distance>=nextSwitch){swipeMode=swipeMode==="vertical"?"horizontal":"vertical
 transitionPause=true;
 if(swipeMode==="horizontal"){arena.classList.add("horizontal");}
 else{arena.classList.remove("horizontal");}
-timeLeft += 10;
-showTimeBonus(10);
+timeLeft += 5;
+showTimeBonus(5);
 nextSwitch += getStepSize();
 lastMode=swipeMode;
 setTimeout(()=>{transitionPause=false;},500);}}
@@ -108,41 +108,15 @@ else{if(absX>absY && absX>2){distance += absX*(gainMultiplier*2);beep(300);}}
 lastY=currentY;
 lastX=currentX;
 }
-
-function showTimeBonus(amount){
-
-const el = document.getElementById("timeBonus");
-
-// texte
+function showTimeBonus(amount){const el = document.getElementById("timeBonus");
 el.textContent = "+" + amount + "s";
-
-// couleur aléatoire arcade
-el.style.color =
-`hsl(${Math.random()*360},100%,70%)`;
-
-// reset animation
+el.style.color = `hsl(${Math.random()*360},100%,70%)`;
 el.classList.remove("show");
-
-// force reflow
 void el.offsetWidth;
-
-// animation
 el.classList.add("show");
-
-// vibration mobile
-if(navigator.vibrate){
-navigator.vibrate(60);
-}
-
-// son bonus
+if(navigator.vibrate){navigator.vibrate(60);}
 beep(600);
-
-// disparition
-setTimeout(()=>{
-el.classList.remove("show");
-},500);
-
-}
+setTimeout(()=>{el.classList.remove("show");},500);}
 
 // =========================
 // UPDATE PRINCIPAL
