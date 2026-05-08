@@ -12,8 +12,13 @@ user-scalable=no">
 <body>
 <div id="counter">👁 0</div>
 <div id="title">👑 SWIPE KING</div>
-<div id="subtitle">A game by Alexandre Baranger V0.019</div>
-<div id="game"><div id="distance">0 cm</div><div id="arena"><div id="rope"></div></div></div>
+<div id="subtitle">A game by Alexandre Baranger V0.020</div>
+<div id="game">
+<div id="distance">0 cm</div> 
+<div id="timer">30.0 s</div>
+<div id="timeBonus"></div>
+<div id="arena"><div id="rope"></div>
+</div></div>
 <div id="end"></div>
 <script type="module">
 import { initializeApp }
@@ -60,30 +65,17 @@ window.getScores = async ()=>{
   snap.forEach(d=>{let s=d.data();html += `<div>${s.name} - ${s.score} cm</div>`;});
   return html;
 };
-window.incrementVisits = async () => {
-
+window.incrementVisits = async () => 
+{
   const ref = doc(db, "stats", "global");
-
-  try {
-    const snap = await getDoc(ref);
-
-    if (!snap.exists()) {
-      await setDoc(ref, { visits: 1 });
-      return 1;
-    }
-
-    const current = snap.data()?.visits ?? 0;
-
-    await setDoc(ref, {
-      visits: current + 1
-    });
-
-    return current + 1;
-
-  } catch (e) {
-    console.error("VISITS ERROR:", e);
-    return 0;
-  }
+  try {const snap = await getDoc(ref);
+  if (!snap.exists()) {await setDoc(ref, { visits: 1 });return 1;}
+  const current = snap.data()?.visits ?? 0;
+  await setDoc(ref, {visits: current + 1});
+  return current + 1;
+} 
+catch (e) {console.error("VISITS ERROR:", e);return 0;
+}
 };
 </script>
 <script src="script.js"></script>

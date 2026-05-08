@@ -17,6 +17,32 @@ padding-bottom:env(safe-area-inset-bottom);
 #subtitle{opacity:.6;font-size:.9em;margin-bottom:6px;z-index:10;position:relative;}
 #game{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;}
 #distance{font-size:2.3em;}
+#timer{font-size:1.6em;color:#ffdd88;font-weight:bold;transition:transform .1s linear,color .2s;}
+#timeBonus{
+position:fixed;
+inset:0;
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:5em;
+font-weight:bold;
+color:#ffee66;
+pointer-events:none;
+opacity:0;
+transform:scale(.5);
+transition:
+opacity .25s ease,
+transform .25s ease;
+z-index:5000;
+text-shadow:
+0 0 10px #ff0,
+0 0 30px #ff8800;
+}
+
+#timeBonus.show{
+opacity:1;
+transform:scale(1.2);
+}
 
 #arena{
 position:relative;

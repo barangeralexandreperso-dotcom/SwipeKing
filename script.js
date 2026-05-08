@@ -12,6 +12,8 @@ let lastMode="vertical";
 let transitionPause=false;
 let playerName="Anonyme";
 let enemyForce=0.08;
+let timeLeft = 30;
+let lastFrame = performance.now();
 
 // gain joueur
 // très rapide
@@ -53,14 +55,9 @@ o.stop(audio.currentTime+.04);
 // =========================
 // VISITES
 // =========================
-setTimeout(async () => {
-  if (typeof incrementVisits !== "function") {
-    console.error("incrementVisits pas chargé");
-    return;
-  }
-
-  const c = await incrementVisits();
-  document.getElementById("counter").textContent = "👁 " + c;
+setTimeout(async () => 
+{if (typeof incrementVisits !== "function") {console.error("incrementVisits pas chargé");return;}
+  const c = await incrementVisits();document.getElementById("counter").textContent = "👁 " + c;
 }, 500);
 
 // =========================
@@ -80,6 +77,8 @@ if(distance>=nextSwitch){swipeMode=swipeMode==="vertical"?"horizontal":"vertical
 transitionPause=true;
 if(swipeMode==="horizontal"){arena.classList.add("horizontal");}
 else{arena.classList.remove("horizontal");}
+timeLeft += 10;
+showTimeBonus(10);
 nextSwitch += getStepSize();
 lastMode=swipeMode;
 setTimeout(()=>{transitionPause=false;},500);}}
@@ -110,10 +109,57 @@ lastY=currentY;
 lastX=currentX;
 }
 
+function showTimeBonus(amount){
+
+const el = document.getElementById("timeBonus");
+
+// texte
+el.textContent = "+" + amount + "s";
+
+// couleur aléatoire arcade
+el.style.color =
+`hsl(${Math.random()*360},100%,70%)`;
+
+// reset animation
+el.classList.remove("show");
+
+// force reflow
+void el.offsetWidth;
+
+// animation
+el.classList.add("show");
+
+// vibration mobile
+if(navigator.vibrate){
+navigator.vibrate(60);
+}
+
+// son bonus
+beep(600);
+
+// disparition
+setTimeout(()=>{
+el.classList.remove("show");
+},500);
+
+}
+
 // =========================
 // UPDATE PRINCIPAL
 // =========================
-function update(){d.textContent=Math.floor(distance)+" cm";
+function update()
+{
+const now = performance.now();
+const delta = (now - lastFrame) / 1000;
+lastFrame = now;
+timeLeft -= delta;
+if(timeLeft <= 0){timeLeft = 0;endGame();}
+d.textContent=Math.floor(distance)+" cm";
+const timerEl = document.getElementById("timer");
+timerEl.textContent = timeLeft.toFixed(1)+" s";
+if(timeLeft < 3){timerEl.style.color = "red";
+timerEl.style.transform = `scale(${1 + Math.sin(Date.now()/80)*0.15})`;}
+else{timerEl.style.color = "#ffdd88";timerEl.style.transform = "scale(1)";}
 updateMode();
 distance -= enemyForce;
 if(distance<0){distance=0;}
