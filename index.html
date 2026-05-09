@@ -12,7 +12,7 @@ user-scalable=no">
 <body>
 <div id="counter">👁 0</div>
 <div id="title">👑 SWIPE KING</div>
-<div id="subtitle">A game by Alexandre Baranger V0.023</div>
+<div id="subtitle">A game by Alexandre Baranger V0.024</div>
 <div id="game">
 <div id="distance">0 cm</div> 
 <div id="timer">10.0 s</div>
@@ -65,8 +65,7 @@ window.saveScore = async (name, score) => {
   });
 const q = query(
   collection(db,"scores"),
-  orderBy("score","desc"),
-  orderBy("date","asc")
+  orderBy("score","desc")
 );
   const snap = await getDocs(q);
   const docs = snap.docs;
@@ -81,7 +80,6 @@ window.getScores = async ()=>{
 const q = query(
   collection(db,"scores"),
   orderBy("score","desc"),
-  orderBy("date","asc"),
   limit(10)
 );
   const snap = await getDocs(q);
