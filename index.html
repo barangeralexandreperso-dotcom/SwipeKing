@@ -12,7 +12,7 @@ user-scalable=no">
 <body>
 <div id="counter">👁 0</div>
 <div id="title">👑 SWIPE KING</div>
-<div id="subtitle">A game by Alexandre Baranger V0.022</div>
+<div id="subtitle">A game by Alexandre Baranger V0.023</div>
 <div id="game">
 <div id="distance">0 cm</div> 
 <div id="timer">10.0 s</div>
@@ -35,7 +35,8 @@ import {
   updateDoc,
   increment,
   getDoc,
-  setDoc
+  setDoc,
+  deleteDoc
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 import {getAuth,signInAnonymously}
@@ -56,10 +57,33 @@ window.saveScore = async (name, score) => {
   const user = auth.currentUser;
   if (!user) return;
   if(score < 0 || score > 50000) return;
-  await addDoc(collection(db,"scores"),{uid:user.uid,name:name.substring(0,20),score,date:Date.now()});
+  await addDoc(collection(db,"scores"),{
+    uid:user.uid,
+    name:name.substring(0,20),
+    score,
+    date:Date.now()
+  });
+const q = query(
+  collection(db,"scores"),
+  orderBy("score","desc"),
+  orderBy("date","asc")
+);
+  const snap = await getDocs(q);
+  const docs = snap.docs;
+  if(docs.length > 10){
+    const toDelete = docs.slice(10);
+    for(const d of toDelete){
+      await deleteDoc(doc(db,"scores",d.id));
+    }
+  }
 };
 window.getScores = async ()=>{
-  const q = query(collection(db,"scores"),orderBy("score","desc"),limit(10));
+const q = query(
+  collection(db,"scores"),
+  orderBy("score","desc"),
+  orderBy("date","asc"),
+  limit(10)
+);
   const snap = await getDocs(q);
   let html="";
   snap.forEach(d=>{let s=d.data();html += `<div>${s.name} - ${s.score} cm</div>`;});
