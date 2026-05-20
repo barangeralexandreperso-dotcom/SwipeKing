@@ -10,7 +10,15 @@ user-scalable=no">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="counter">👁 0</div>
+<div id="topbar">
+    <div id="leftPanel">
+        <div id="gameTitle">Swipe&Rope</div>
+        <div id="activeRooms">🎮 Active Rope : 0</div>
+    </div>
+
+    <div id="counter">👁 0</div>
+</div>
+
 <div id="title">👑 SWIPE KING</div>
 <div id="subtitle">A game by Alexandre Baranger V0.024</div>
 <div id="game">
@@ -99,6 +107,25 @@ window.incrementVisits = async () =>
 catch (e) {console.error("VISITS ERROR:", e);return 0;
 }
 };
+window.updateActiveRooms = async () =>
+{
+  try
+  {
+    const snap = await getDocs(collection(db, "rooms_1v1"));
+    const count = snap.size;
+    console.log("ACTIVE ROOMS =", count);
+    document.getElementById("activeRooms").textContent = "🎮 Active Rope : " + count;
+  }
+  catch (e){console.error("ROOM ERROR:", e);}
+};
+
+async function startRoomCounter()
+{
+  await updateActiveRooms();
+  setInterval(updateActiveRooms, 5000);
+}
+
+startRoomCounter();
 </script>
 <script src="script.js"></script>
 </body>
