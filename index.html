@@ -14,11 +14,17 @@ user-scalable=no">
     <div id="leftPanel">
         <div id="gameTitle">Swipe&Rope</div>
         <div id="activeRooms">🎮 Active Rope : 0</div>
+        <div id="swipeVisits">👁 Swipe King : 0</div>
+        <div id="ropeVisits">👁 Rope Solo : 0</div>
     </div>
-
-    <div id="counter">👁 0</div>
+    <div id="rightPanel">
+        <div id="swipeTop"></div>
+        <div id="ropeTop"></div>
+    </div>
 </div>
-
+<div id="startScreen">
+  <button id="startButton">▶ START</button>
+</div>
 <div id="title">👑 SWIPE KING</div>
 <div id="subtitle">A game by Alexandre Baranger V0.024</div>
 <div id="game">
@@ -28,24 +34,11 @@ user-scalable=no">
 <div id="arena"><div id="rope"></div>
 </div></div>
 <div id="end"></div>
+
 <script type="module">
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  limit,
-  doc,
-  updateDoc,
-  increment,
-  getDoc,
-  setDoc,
-  deleteDoc
-}
+import {getFirestore,collection,addDoc,getDocs,query,orderBy,limit,doc,updateDoc,increment,getDoc,setDoc,deleteDoc}
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 import {getAuth,signInAnonymously}
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
@@ -61,71 +54,93 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 await signInAnonymously(auth);
 const db = getFirestore(app);
-window.saveScore = async (name, score) => {
-  const user = auth.currentUser;
-  if (!user) return;
-  if(score < 0 || score > 50000) return;
-  await addDoc(collection(db,"scores"),{
-    uid:user.uid,
-    name:name.substring(0,20),
-    score,
-    date:Date.now()
-  });
-const q = query(
-  collection(db,"scores"),
-  orderBy("score","desc")
-);
-  const snap = await getDocs(q);
-  const docs = snap.docs;
-  if(docs.length > 10){
-    const toDelete = docs.slice(10);
-    for(const d of toDelete){
-      await deleteDoc(doc(db,"scores",d.id));
-    }
-  }
-};
-window.getScores = async ()=>{
-const q = query(
-  collection(db,"scores"),
-  orderBy("score","desc"),
-  limit(10)
-);
-  const snap = await getDocs(q);
-  let html="";
-  snap.forEach(d=>{let s=d.data();html += `<div>${s.name} - ${s.score} cm</div>`;});
-  return html;
-};
-window.incrementVisits = async () => 
-{
-  const ref = doc(db, "stats", "global");
-  try {const snap = await getDoc(ref);
-  if (!snap.exists()) {await setDoc(ref, { visits: 1 });return 1;}
-  const current = snap.data()?.visits ?? 0;
-  await setDoc(ref, {visits: current + 1});
-  return current + 1;
-} 
-catch (e) {console.error("VISITS ERROR:", e);return 0;
-}
-};
-window.updateActiveRooms = async () =>
-{
-  try
-  {
-    const snap = await getDocs(collection(db, "rooms_1v1"));
-    const count = snap.size;
-    console.log("ACTIVE ROOMS =", count);
-    document.getElementById("activeRooms").textContent = "🎮 Active Rope : " + count;
-  }
-  catch (e){console.error("ROOM ERROR:", e);}
+let gameStarted = false;
+
+window.saveScore = async (name, score) => {const user = auth.currentUser;if (!user) return;if(score < 0 || score > 50000) return;
+await addDoc(collection(db,"scores"),{uid:user.uid,name:name.substring(0,20),score,date:Date.now()});
+const q = query(collection(db,"scores"),orderBy("score","desc"));
+const snap = await getDocs(q);
+const docs = snap.docs;
+if(docs.length > 10){const toDelete = docs.slice(10);for(const d of toDelete){await deleteDoc(doc(db,"scores",d.id));}}
 };
 
+window.getScores = async ()=>{const q = query(collection(db,"scores"),orderBy("score","desc"),limit(10));
+const snap = await getDocs(q);
+let html="";
+snap.forEach(d=>{let s=d.data();html += `<div>${s.name} - ${s.score} cm</div>`;});
+return html;
+};
+
+window.incrementVisits = async () => {const ref = doc(db, "stats", "global");try {const snap = await getDoc(ref);if (!snap.exists()) {await setDoc(ref, { visits: 1 });return 1;}
+const current = snap.data()?.visits ?? 0;await setDoc(ref, {visits: current + 1});return current + 1;} 
+catch (e) {console.error("VISITS ERROR:", e);return 0;}
+};
+
+window.updateActiveRooms = async () =>{try{const snap = await getDocs(collection(db, "rooms_1v1"));const count = snap.size;console.log("ACTIVE ROOMS =", count);
+document.getElementById("activeRooms").textContent = "🎮 Active Rope : " + count;}
+catch (e){console.error("ROOM ERROR:", e);}
+};
+
+async function updateSwipeVisits()
+{try
+  {const ref = doc(db,"stats","global");const snap = await getDoc(ref);if(!snap.exists()) return;const v = snap.data()?.visits ?? 0;
+   document.getElementById("swipeVisits").textContent = "👁 Swipe King : " + v;}
+  catch(e){}
+}
+
+async function updateRopeVisits()
+{try {const ref = doc(db,"statsropesolo","global");const snap = await getDoc(ref);
+if(!snap.exists()) return;const v = snap.data()?.visits ?? 0;
+document.getElementById("ropeVisits").textContent = "👁 Rope Solo : " + v;}  
+catch(e){}}
+
+async function updateSwipeTop()
+{try
+  {const q = query(collection(db,"scores"),orderBy("score","desc"),limit(10));
+   const snap = await getDocs(q);
+   let html = "";
+   let i = 1;
+   snap.forEach(d =>{const s = d.data();html += `${i}. ${s.name ?? "???"} - ${s.score} cm<br>`;i++;});
+   document.getElementById("swipeTop").innerHTML = "🏆 Swipe Top 10<br>" + html;}
+   catch(e){console.error("SWIPE TOP ERROR:", e);}
+}
+
+async function updateRopeTop10()
+{try
+  {const snap = await getDocs(collection(db,"scoresropesolo"));
+  let scores = [];
+  snap.forEach(doc => {const data = doc.data(); if(data.time !== undefined) {scores.push({name: data.name ?? "???",time: data.time});}});
+  scores.sort((a,b) => a.time - b.time);
+  scores = scores.slice(0,10);
+  let html = "";
+  scores.forEach((s,i) =>{html += `${i+1}. ${s.name} - ${s.time.toFixed(2)}s<br>`;});
+  document.getElementById("ropeTop").innerHTML = "🏆 Rope Top 10<br>" + html;}
+  catch(e){console.error("ROPE TOP ERROR:", e);}
+}
 async function startRoomCounter()
 {
   await updateActiveRooms();
   setInterval(updateActiveRooms, 5000);
 }
-
 startRoomCounter();
+
+async function refresh()
+{
+  await updateActiveRooms();
+  await updateSwipeVisits();
+  await updateRopeVisits();
+  await updateSwipeTop();
+  await updateRopeTop10();
+}
+
+refresh();
+setInterval(refresh,5000);
+
+document.getElementById("startButton").addEventListener("click", () =>{
+document.getElementById("startScreen").style.display = "none";
+startGame();
+});
+
 </script>
 <script src="script.js"></script>
 </body>
