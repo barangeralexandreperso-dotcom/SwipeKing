@@ -213,3 +213,246 @@ transform:scale(0.97);
 box-shadow:
 0 0 10px rgba(255,221,85,0.3);
 }
+/* ===================================== */
+/* MOBILE RESPONSIVE */
+/* ===================================== */
+
+@media (max-width: 900px){
+
+body{
+overflow-x:hidden;
+overflow-y:auto;
+height:auto;
+min-height:100dvh;
+}
+
+/* TOPBAR devient vertical */
+#topbar{
+position:relative;
+top:auto;
+left:auto;
+right:auto;
+
+padding:10px;
+
+display:flex;
+flex-direction:column;
+gap:12px;
+
+align-items:center;
+justify-content:center;
+}
+
+/* PANELS centrés */
+#leftPanel,
+#rightPanel{
+width:100%;
+align-items:center;
+text-align:center;
+}
+
+/* SCORES EN BAS */
+#rightPanel{
+order:3;
+margin-top:20px;
+}
+
+/* Titre plus petit */
+#gameTitle{
+font-size:24px;
+}
+
+/* leaderboards */
+#swipeTop,
+#ropeTop{
+width:min(95vw,400px);
+font-size:13px;
+}
+
+/* zone jeu */
+#game{
+padding:10px;
+gap:10px;
+}
+
+/* arène plus grande mobile */
+#arena{
+width:30vw;
+height:45vh;
+
+max-width:140px;
+max-height:420px;
+}
+
+/* texte */
+#distance{
+font-size:2em;
+}
+
+#timer{
+font-size:1.5em;
+}
+
+/* écran start */
+#startScreen{
+top:120px;
+width:92vw;
+border-radius:20px;
+}
+
+#startButton{
+font-size:30px;
+padding:18px 34px;
+}
+
+/* empêche les problèmes iOS */
+html,
+body{
+overscroll-behavior:none;
+-webkit-overflow-scrolling:touch;
+touch-action:none;
+}
+
+}
+
+/* ===================================== */
+/* PETITS TELEPHONES */
+/* ===================================== */
+
+@media (max-width: 500px){
+
+#arena{
+width:36vw;
+height:42vh;
+}
+
+#gameTitle{
+font-size:20px;
+}
+
+#distance{
+font-size:1.7em;
+}
+
+#timer{
+font-size:1.3em;
+}
+
+#startButton{
+font-size:24px;
+padding:16px 24px;
+}
+
+}
+
+/* ===================================== */
+/* MODE PAYSAGE TELEPHONE */
+/* ===================================== */
+
+@media (max-height: 500px) and (orientation: landscape){
+
+#topbar{
+flex-direction:row;
+align-items:flex-start;
+}
+
+#leftPanel{
+align-items:flex-start;
+text-align:left;
+}
+
+#rightPanel{
+align-items:flex-end;
+text-align:right;
+}
+
+#arena{
+height:60vh;
+width:18vw;
+}
+
+#startScreen{
+top:70px;
+}
+
+}
+/* ===================================== */
+/* MOBILE PORTRAIT FINAL LAYOUT */
+/* ===================================== */
+
+@media (max-width: 900px) and (orientation: portrait){
+
+body{
+display:flex;
+flex-direction:column;
+align-items:center;
+}
+
+/* top infos */
+#topbar{
+position:relative;
+
+display:flex;
+flex-direction:column;
+
+width:100%;
+
+align-items:center;
+justify-content:center;
+
+padding:10px;
+box-sizing:border-box;
+}
+
+/* cache temporairement les scores du top */
+#rightPanel{
+width:100%;
+order:10;
+
+display:flex;
+flex-direction:column;
+
+align-items:center;
+justify-content:center;
+
+margin-top:25px;
+}
+
+/* jeu centré */
+#game{
+order:5;
+
+width:100%;
+
+display:flex;
+flex-direction:column;
+
+justify-content:center;
+align-items:center;
+
+margin-top:10px;
+}
+
+/* scores */
+#swipeTop,
+#ropeTop{
+width:min(92vw,420px);
+
+text-align:center;
+
+font-size:13px;
+line-height:1.5;
+
+word-break:break-word;
+}
+
+/* arène */
+#arena{
+width:32vw;
+height:46vh;
+
+max-width:150px;
+max-height:440px;
+}
+
+}

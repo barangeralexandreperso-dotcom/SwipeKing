@@ -167,7 +167,6 @@ function startGame()
 gameStarted = true;
 gameRunning = true;
 lastFrame = performance.now();
-loop();
 }
 // =========================
 // GAME OVER
@@ -193,31 +192,35 @@ beep(180);
 // =========================
 // EVENTS SOURIS
 // =========================
-window.addEventListener("mousedown",e=>{holding=true;lastY=e.clientY;lastX=e.clientX;});
-window.addEventListener("mousemove",swipe);
-window.addEventListener("mouseup",()=>{
-if(!gameStarted) return;
-holding=false;
-endGame();
+
+window.addEventListener("mousedown",e=>{
+holding=true;
+lastY=e.clientY;
+lastX=e.clientX;
 });
-window.addEventListener("touchend",()=>{
-if(!gameStarted) return;
+
+window.addEventListener("mousemove",swipe);
+
+window.addEventListener("mouseup",()=>{
 holding=false;
-endGame();
 });
 // =========================
 // EVENTS MOBILE
 // =========================
+
 window.addEventListener("touchstart",e=>{
 holding=true;
 lastY=e.touches[0].clientY;
 lastX=e.touches[0].clientX;
 },{passive:false});
-window.addEventListener("touchmove",e=>{e.preventDefault();swipe(e.touches[0]);},{passive:false});
-window.addEventListener("touchend",()=>{holding=false;endGame();
-});
 
-// =========================
-// START
-// =========================
+window.addEventListener("touchmove",e=>{
+e.preventDefault();
+swipe(e.touches[0]);
+},{passive:false});
+
+window.addEventListener("touchend",()=>{
+holding=false;
+},{passive:false});
+
 loop();
