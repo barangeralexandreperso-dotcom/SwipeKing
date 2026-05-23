@@ -15,8 +15,6 @@ let enemyForce=0.1;
 let timeLeft = 10;
 let lastFrame = performance.now();
 let bonusCount = 0;
-let gameStarted = false;
-let gameRunning = false;
 
 // gain joueur
 // très rapide
@@ -96,7 +94,6 @@ setTimeout(()=>{transitionPause=false;},500);}}
 // SWIPE
 // =========================
 function swipe(e){
-if(!gameStarted) return;
 if(!holding || gameOver || transitionPause)return;
 let currentY=e.clientY;
 let currentX=e.clientX;
@@ -133,7 +130,6 @@ setTimeout(()=>{el.classList.remove("show");},500);}
 // =========================
 function update()
 {
-if(!gameStarted) return;
 const now = performance.now();
 const delta = (now - lastFrame) / 1000;
 lastFrame = now;
@@ -156,18 +152,8 @@ document.body.style.background=`hsl(${distance%360},30%,5%)`;
 // =========================
 // BOUCLE
 // =========================
-function loop(){
-if(gameOver) return;
-if(!gameStarted){requestAnimationFrame(loop);return;}
-update();
-requestAnimationFrame(loop);
-}
-function startGame()
-{
-gameStarted = true;
-gameRunning = true;
-lastFrame = performance.now();
-}
+function loop(){if(gameOver)return;update();requestAnimationFrame(loop);}
+
 // =========================
 // GAME OVER
 // =========================
@@ -192,35 +178,23 @@ beep(180);
 // =========================
 // EVENTS SOURIS
 // =========================
-
-window.addEventListener("mousedown",e=>{
-holding=true;
-lastY=e.clientY;
-lastX=e.clientX;
-});
-
+window.addEventListener("mousedown",e=>{holding=true;lastY=e.clientY;lastX=e.clientX;});
 window.addEventListener("mousemove",swipe);
+window.addEventListener("mouseup",()=>{holding=false;endGame();});
 
-window.addEventListener("mouseup",()=>{
-holding=false;
-});
 // =========================
 // EVENTS MOBILE
 // =========================
-
 window.addEventListener("touchstart",e=>{
 holding=true;
 lastY=e.touches[0].clientY;
 lastX=e.touches[0].clientX;
 },{passive:false});
+window.addEventListener("touchmove",e=>{e.preventDefault();swipe(e.touches[0]);},{passive:false});
+window.addEventListener("touchend",()=>{holding=false;endGame();
+});
 
-window.addEventListener("touchmove",e=>{
-e.preventDefault();
-swipe(e.touches[0]);
-},{passive:false});
-
-window.addEventListener("touchend",()=>{
-holding=false;
-},{passive:false});
-
+// =========================
+// START
+// =========================
 loop();

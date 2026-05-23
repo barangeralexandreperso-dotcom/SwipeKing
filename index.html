@@ -2,17 +2,13 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width,
-initial-scale=1.0,
-user-scalable=no">
-<title>Swipe King</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Swipe King - Lobby</title>
 <link rel="stylesheet" href="style.css">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
 </head>
 
 <body>
+
 <div id="topbar">
     <div id="leftPanel">
         <div id="gameTitle">Swipe&Rope</div>
@@ -20,32 +16,31 @@ user-scalable=no">
         <div id="swipeVisits">👁 Swipe King : 0</div>
         <div id="ropeVisits">👁 Rope Solo : 0</div>
     </div>
+
     <div id="rightPanel">
         <div id="swipeTop"></div>
         <div id="ropeTop"></div>
     </div>
 </div>
+
+<div id="title">👑 SWIPE KING</div>
+<div id="subtitle">A game by Alexandre Baranger V0.024</div>
+
+<!-- START BUTTON -->
 <div id="startScreen">
   <button id="startButton">▶ START</button>
 </div>
 
-<div id="title">👑 SWIPE KING</div>
-<div id="subtitle">A game by Alexandre Baranger V0.025</div>
-<div id="game">
-<div id="distance">0 cm</div> 
-<div id="timer">10.0 s</div>
-<div id="timeBonus"></div>
-<div id="arena"><div id="rope"></div>
-</div></div>
-<div id="end"></div>
+<!-- OPTIONNEL: zone visible pour scroll mobile -->
+<div id="lobbySpacer"></div>
 
 <script type="module">
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import {getFirestore,collection,addDoc,getDocs,query,orderBy,limit,doc,updateDoc,increment,getDoc,setDoc,deleteDoc}
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
-import {getAuth,signInAnonymously}
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import {
+getFirestore, collection, getDocs, query, orderBy, limit, doc, getDoc
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyB6z3ajkXJr7NIj7PmAkREA9uieAttGyk0",
   authDomain: "swipe-king-6f95b.firebaseapp.com",
@@ -54,82 +49,86 @@ const firebaseConfig = {
   messagingSenderId: "149048703091",
   appId: "1:149048703091:web:8bd7b61d44648fd4a7d206"
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 await signInAnonymously(auth);
 const db = getFirestore(app);
-let gameStarted = false;
 
-window.saveScore = async (name, score) => {const user = auth.currentUser;if (!user) return;if(score < 0 || score > 50000) return;
-await addDoc(collection(db,"scores"),{uid:user.uid,name:name.substring(0,20),score,date:Date.now()});
-const q = query(collection(db,"scores"),orderBy("score","desc"));
-const snap = await getDocs(q);
-const docs = snap.docs;
-if(docs.length > 10){const toDelete = docs.slice(10);for(const d of toDelete){await deleteDoc(doc(db,"scores",d.id));}}
-};
+/* =========================
+   NAVIGATION VERS GAME
+========================= */
+document.getElementById("startButton").addEventListener("click", () => {
+  window.location.href = "game.html";
+});
 
-window.getScores = async ()=>{const q = query(collection(db,"scores"),orderBy("score","desc"),limit(10));
-const snap = await getDocs(q);
-let html="";
-snap.forEach(d=>{let s=d.data();html += `<div>${s.name} - ${s.score} cm</div>`;});
-return html;
-};
+/* =========================
+   TES FONCTIONS FIREBASE
+========================= */
 
-window.incrementVisits = async () => {const ref = doc(db, "stats", "global");try {const snap = await getDoc(ref);if (!snap.exists()) {await setDoc(ref, { visits: 1 });return 1;}
-const current = snap.data()?.visits ?? 0;await setDoc(ref, {visits: current + 1});return current + 1;} 
-catch (e) {console.error("VISITS ERROR:", e);return 0;}
-};
-
-window.updateActiveRooms = async () =>{try{const snap = await getDocs(collection(db, "rooms_1v1"));const count = snap.size;console.log("ACTIVE ROOMS =", count);
-document.getElementById("activeRooms").textContent = "🎮 Active Rope : " + count;}
-catch (e){console.error("ROOM ERROR:", e);}
-};
-
-async function updateSwipeVisits()
-{try
-  {const ref = doc(db,"stats","global");const snap = await getDoc(ref);if(!snap.exists()) return;const v = snap.data()?.visits ?? 0;
-   document.getElementById("swipeVisits").textContent = "👁 Swipe King : " + v;}
-  catch(e){}
+async function updateActiveRooms(){
+  const snap = await getDocs(collection(db, "rooms_1v1"));
+  document.getElementById("activeRooms").textContent =
+    "🎮 Active Rope : " + snap.size;
 }
 
-async function updateRopeVisits()
-{try {const ref = doc(db,"statsropesolo","global");const snap = await getDoc(ref);
-if(!snap.exists()) return;const v = snap.data()?.visits ?? 0;
-document.getElementById("ropeVisits").textContent = "👁 Rope Solo : " + v;}  
-catch(e){}}
-
-async function updateSwipeTop()
-{try
-  {const q = query(collection(db,"scores"),orderBy("score","desc"),limit(10));
-   const snap = await getDocs(q);
-   let html = "";
-   let i = 1;
-   snap.forEach(d =>{const s = d.data();html += `${i}. ${s.name ?? "???"} - ${s.score} cm<br>`;i++;});
-   document.getElementById("swipeTop").innerHTML = "🏆 Swipe Top 10<br>" + html;}
-   catch(e){console.error("SWIPE TOP ERROR:", e);}
+async function updateSwipeVisits(){
+  const ref = doc(db,"stats","global");
+  const snap = await getDoc(ref);
+  const v = snap.exists() ? (snap.data()?.visits ?? 0) : 0;
+  document.getElementById("swipeVisits").textContent =
+    "👁 Swipe King : " + v;
 }
 
-async function updateRopeTop10()
-{try
-  {const snap = await getDocs(collection(db,"scoresropesolo"));
-  let scores = [];
-  snap.forEach(doc => {const data = doc.data(); if(data.time !== undefined) {scores.push({name: data.name ?? "???",time: data.time});}});
-  scores.sort((a,b) => a.time - b.time);
-  scores = scores.slice(0,10);
+async function updateRopeVisits(){
+  const ref = doc(db,"statsropesolo","global");
+  const snap = await getDoc(ref);
+  const v = snap.exists() ? (snap.data()?.visits ?? 0) : 0;
+  document.getElementById("ropeVisits").textContent =
+    "👁 Rope Solo : " + v;
+}
+
+async function updateSwipeTop(){
+  const q = query(collection(db,"scores"),orderBy("score","desc"),limit(10));
+  const snap = await getDocs(q);
+
   let html = "";
-  scores.forEach((s,i) =>{html += `${i+1}. ${s.name} - ${s.time.toFixed(2)}s<br>`;});
-  document.getElementById("ropeTop").innerHTML = "🏆 Rope Top 10<br>" + html;}
-  catch(e){console.error("ROPE TOP ERROR:", e);}
-}
-async function startRoomCounter()
-{
-  await updateActiveRooms();
-  setInterval(updateActiveRooms, 5000);
-}
-startRoomCounter();
+  let i = 1;
 
-async function refresh()
-{
+  snap.forEach(d=>{
+    const s = d.data();
+    html += `${i++}. ${s.name ?? "???"} - ${s.score} cm<br>`;
+  });
+
+  document.getElementById("swipeTop").innerHTML =
+    "🏆 Swipe Top 10<br>" + html;
+}
+
+async function updateRopeTop10(){
+  const snap = await getDocs(collection(db,"scoresropesolo"));
+  let scores = [];
+
+  snap.forEach(doc=>{
+    const d = doc.data();
+    if(d.time !== undefined){
+      scores.push({name:d.name ?? "???", time:d.time});
+    }
+  });
+
+  scores.sort((a,b)=>a.time-b.time);
+  scores = scores.slice(0,10);
+
+  let html="";
+  scores.forEach((s,i)=>{
+    html += `${i+1}. ${s.name} - ${s.time.toFixed(2)}s<br>`;
+  });
+
+  document.getElementById("ropeTop").innerHTML =
+    "🏆 Rope Top 10<br>" + html;
+}
+
+/* refresh lobby */
+async function refresh(){
   await updateActiveRooms();
   await updateSwipeVisits();
   await updateRopeVisits();
@@ -140,12 +139,7 @@ async function refresh()
 refresh();
 setInterval(refresh,5000);
 
-document.getElementById("startButton").addEventListener("click", () =>{
-document.getElementById("startScreen").style.display = "none";
-startGame();
-});
-
 </script>
-<script src="script.js"></script>
+
 </body>
 </html>
