@@ -1,11 +1,12 @@
 body{
 margin:0;
-overflow:hidden;
+overflow-x:hidden;
+overflow-y:auto;
 font-family:Arial;
 background:#0b0b0b;
 color:white;
 text-align:center;
-touch-action:none;
+touch-action:pan-y;
 display:flex;
 flex-direction:column;
 min-height:100dvh;
@@ -286,16 +287,25 @@ top:70px;
 
 @media (max-width: 900px) and (orientation: portrait){
 
+html,
 body{
 overflow-x:hidden;
 overflow-y:auto;
 
+height:auto;
+min-height:100dvh;
+
+-webkit-overflow-scrolling:touch;
+}
+
+/* BODY */
+body{
 display:flex;
 flex-direction:column;
 align-items:center;
 }
 
-/* TOPBAR SIMPLE */
+/* TOPBAR */
 #topbar{
 position:relative;
 
@@ -313,7 +323,7 @@ gap:16px;
 box-sizing:border-box;
 }
 
-/* INFOS HAUT */
+/* INFOS */
 #leftPanel{
 width:100%;
 
@@ -326,6 +336,35 @@ justify-content:center;
 text-align:center;
 }
 
+/* TITRES */
+#title,
+#subtitle{
+position:relative;
+z-index:2;
+}
+
+/* START */
+#startScreen{
+position:relative;
+
+top:auto;
+left:auto;
+transform:none;
+
+width:92vw;
+max-width:500px;
+
+height:auto;
+min-height:220px;
+
+margin-top:20px;
+margin-bottom:20px;
+
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
 /* JEU */
 #game{
 width:100%;
@@ -336,18 +375,25 @@ flex-direction:column;
 align-items:center;
 justify-content:center;
 
-margin-top:10px;
-margin-bottom:30px;
-
 padding:10px;
+
+margin-top:10px;
+margin-bottom:40px;
 
 box-sizing:border-box;
 }
 
-/* SCORES VRAIMENT EN DESSOUS */
-#rightPanel{
-position:relative;
+/* ARENA */
+#arena{
+width:32vw;
+height:46vh;
 
+max-width:150px;
+max-height:440px;
+}
+
+/* SCORES */
+#rightPanel{
 width:100%;
 
 display:flex;
@@ -359,11 +405,12 @@ justify-content:center;
 text-align:center;
 
 margin-top:20px;
-margin-bottom:20px;
-padding-bottom:30px;
+margin-bottom:40px;
+
+padding-bottom:40px;
 }
 
-/* SCORES */
+/* BOX SCORES */
 #swipeTop,
 #ropeTop{
 width:min(92vw,420px);
@@ -374,15 +421,6 @@ line-height:1.5;
 text-align:center;
 
 word-break:break-word;
-}
-
-/* ARENA */
-#arena{
-width:32vw;
-height:46vh;
-
-max-width:150px;
-max-height:440px;
 }
 
 /* TEXTE */
