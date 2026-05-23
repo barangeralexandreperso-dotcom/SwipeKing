@@ -217,103 +217,7 @@ box-shadow:
 /* MOBILE RESPONSIVE */
 /* ===================================== */
 
-@media (max-width: 900px){
 
-body{
-overflow-x:hidden;
-overflow-y:auto;
-height:auto;
-min-height:100dvh;
-}
-
-/* TOPBAR devient vertical */
-#topbar{
-position:relative;
-top:auto;
-left:auto;
-right:auto;
-
-padding:10px;
-
-display:flex;
-flex-direction:column;
-gap:12px;
-
-align-items:center;
-justify-content:center;
-}
-
-/* PANELS centrés */
-#leftPanel,
-#rightPanel{
-width:100%;
-align-items:center;
-text-align:center;
-}
-
-/* SCORES EN BAS */
-#rightPanel{
-order:3;
-margin-top:20px;
-}
-
-/* Titre plus petit */
-#gameTitle{
-font-size:24px;
-}
-
-/* leaderboards */
-#swipeTop,
-#ropeTop{
-width:min(95vw,400px);
-font-size:13px;
-}
-
-/* zone jeu */
-#game{
-padding:10px;
-gap:10px;
-}
-
-/* arène plus grande mobile */
-#arena{
-width:30vw;
-height:45vh;
-
-max-width:140px;
-max-height:420px;
-}
-
-/* texte */
-#distance{
-font-size:2em;
-}
-
-#timer{
-font-size:1.5em;
-}
-
-/* écran start */
-#startScreen{
-top:120px;
-width:92vw;
-border-radius:20px;
-}
-
-#startButton{
-font-size:30px;
-padding:18px 34px;
-}
-
-/* empêche les problèmes iOS */
-html,
-body{
-overscroll-behavior:none;
--webkit-overflow-scrolling:touch;
-touch-action:none;
-}
-
-}
 
 /* ===================================== */
 /* PETITS TELEPHONES */
@@ -377,37 +281,41 @@ top:70px;
 
 }
 /* ===================================== */
-/* MOBILE PORTRAIT FINAL LAYOUT */
+/* MOBILE PORTRAIT FINAL */
 /* ===================================== */
 
 @media (max-width: 900px) and (orientation: portrait){
 
 body{
+overflow-x:hidden;
+overflow-y:auto;
+
 display:flex;
 flex-direction:column;
 align-items:center;
 }
 
-/* top infos */
+/* TOPBAR SIMPLE */
 #topbar{
 position:relative;
 
+width:100%;
+
 display:flex;
 flex-direction:column;
-
-width:100%;
 
 align-items:center;
 justify-content:center;
 
 padding:10px;
+gap:16px;
+
 box-sizing:border-box;
 }
 
-/* cache temporairement les scores du top */
-#rightPanel{
+/* INFOS HAUT */
+#leftPanel{
 width:100%;
-order:10;
 
 display:flex;
 flex-direction:column;
@@ -415,44 +323,75 @@ flex-direction:column;
 align-items:center;
 justify-content:center;
 
-margin-top:25px;
+text-align:center;
 }
 
-/* jeu centré */
+/* JEU */
 #game{
-order:5;
-
 width:100%;
 
 display:flex;
 flex-direction:column;
 
-justify-content:center;
 align-items:center;
+justify-content:center;
 
 margin-top:10px;
+margin-bottom:30px;
+
+padding:10px;
+
+box-sizing:border-box;
 }
 
-/* scores */
+/* SCORES VRAIMENT EN DESSOUS */
+#rightPanel{
+position:relative;
+
+width:100%;
+
+display:flex;
+flex-direction:column;
+
+align-items:center;
+justify-content:center;
+
+text-align:center;
+
+margin-top:20px;
+margin-bottom:20px;
+padding-bottom:30px;
+}
+
+/* SCORES */
 #swipeTop,
 #ropeTop{
 width:min(92vw,420px);
 
-text-align:center;
-
 font-size:13px;
 line-height:1.5;
+
+text-align:center;
 
 word-break:break-word;
 }
 
-/* arène */
+/* ARENA */
 #arena{
 width:32vw;
 height:46vh;
 
 max-width:150px;
 max-height:440px;
+}
+
+/* TEXTE */
+#distance{
+font-size:2em;
+}
+
+#timer{
+font-size:1.5em;
 }
 
 }
