@@ -437,3 +437,26 @@ font-size:1.5em;
 }
 
 }
+#discordBox {
+  text-align: center;
+  margin-top: 10px;
+}
+
+#discordBox a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #5865F2;
+  color: white;
+  text-decoration: none;
+  border-radius: 10px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  transition: 0.2s;
+}
+
+#discordBox a:hover {
+  background: #4752c4;
+  transform: scale(1.05);
+}
