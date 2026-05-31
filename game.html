@@ -1,105 +1,167 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width,
-initial-scale=1.0,
-user-scalable=no">
-<title>Swipe King</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<div id="counter">👁 0</div>
-<div id="title">👑 SWIPE KING</div>
-<div id="subtitle">A game by Alexandre Baranger V0.024</div>
-<div id="game">
-<div id="distance">0 cm</div> 
-<div id="timer">10.0 s</div>
-<div id="timeBonus"></div>
-<div id="arena"><div id="rope"></div>
-</div></div>
-<div id="end"></div>
-<script type="module">
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  limit,
-  doc,
-  updateDoc,
-  increment,
-  getDoc,
-  setDoc,
-  deleteDoc
-}
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
-import {getAuth,signInAnonymously}
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
-const firebaseConfig = {
-  apiKey: "AIzaSyB6z3ajkXJr7NIj7PmAkREA9uieAttGyk0",
-  authDomain: "swipe-king-6f95b.firebaseapp.com",
-  projectId: "swipe-king-6f95b",
-  storageBucket: "swipe-king-6f95b.firebasestorage.app",
-  messagingSenderId: "149048703091",
-  appId: "1:149048703091:web:8bd7b61d44648fd4a7d206"
-};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-await signInAnonymously(auth);
-const db = getFirestore(app);
-window.saveScore = async (name, score) => {
-  const user = auth.currentUser;
-  if (!user) return;
-  if(score < 0 || score > 50000) return;
-  await addDoc(collection(db,"scores"),{
-    uid:user.uid,
-    name:name.substring(0,20),
-    score,
-    date:Date.now()
-  });
-const q = query(
-  collection(db,"scores"),
-  orderBy("score","desc")
-);
-  const snap = await getDocs(q);
-  const docs = snap.docs;
-  if(docs.length > 10){
-    const toDelete = docs.slice(10);
-    for(const d of toDelete){
-      await deleteDoc(doc(db,"scores",d.id));
-    }
-  }
-};
-window.getScores = async ()=>{
-const q = query(
-  collection(db,"scores"),
-  orderBy("score","desc"),
-  limit(10)
-);
-  const snap = await getDocs(q);
-  let html="";
-  snap.forEach(d=>{let s=d.data();html += `<div>${s.name} - ${s.score} cm</div>`;});
-  return html;
-};
-window.incrementVisits = async () => 
-{
-  const ref = doc(db, "stats", "global");
-  try {const snap = await getDoc(ref);
-  if (!snap.exists()) {await setDoc(ref, { visits: 1 });return 1;}
-  const current = snap.data()?.visits ?? 0;
-  await setDoc(ref, {visits: current + 1});
-  return current + 1;
-} 
-catch (e) {console.error("VISITS ERROR:", e);return 0;
-}
-};
-</script>
-<script src="script.js"></script>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>app - SWIPEKING</title>
+    <!-- connect GOOGLE FONT -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- appel CSS -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <!-- content GAMING -->
+    <div id="topbar" class="container-sm g-0 bg-dark vh-100 d-flex flex-column wrapper_appgaming">
+      <!-- bloc ID -->
+      <div class="row g-0">
+        <div class="col-12 d-flex flex-row justify-content-between">
+          <p id="counter" class="d-flex align-items-center text-white py-2 ps-4 pe-3 m-0"></p>
+          <p class="p-0 m-3"><a href="index.html" class="btn btn-warning px-4 py-3">quit</a></p>
+        </div>
+      </div>
+      <!-- bloc TITLE -->
+      <div class="row g-0">
+        <div class="col-12 text-center">
+          <h2 class="text-white p-0 m-0">SwipeKing</h2>
+          <p class="text-white p-0 m-0 fst-italic"><small>A game by Alexandre Baranger V0.024</small></p>
+        </div>
+      </div>
+      <!-- bloc GAME -->
+      <div id="game" class="row g-0">
+        <div class="col-12 my-5">
+          <div class="row g-0">
+            <div class="col-12 text-center">
+              <h1 id="distance" class="text-white fw-normal p-0 m-0">0 cm</h1>
+              <p id="timer" class="text-warning p-0 m-0">10.0 s</p>
+            </div>
+          </div>
+          <div class="row g-0">
+            <div class="col-12 my-4 d-flex flex-column align-items-center justify-content-center">
+              <p id="timeBonus" class="position-absolute rounded-circle border border-3 border-warning bg-dark text-warning time_bonus p-3 m-0"></p>
+              <div id="arena" class="overflow-hidden rounded-2 content_zone">
+                <div id="rope" class="position-absolute w-100 swipe_zone"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- content SCORING -->
+    <div id="end" class="container g-0 end-content d-none fixed-top h-100 bg-warning d-flex flex-column justify-content-center wrapper_appscoring">
+      <div class="row g-0">
+        <div class="col-10 offset-1 d-flex flex-column align-items-center">
+          <h2 class="text-dark p-0 m-0">GAME OVER</h2>
+          <p id="finalScore" class="d-flex justify-content-center bg-dark text-white fw-bold fs-2 px-5 py-2 my-2 rounded">0 cm</p>
+        </div>
+      </div>
+      <div class="row g-0">
+        <div class="col-6 offset-3 py-4 text-center">
+          <h4 class="text-dark mb-3">Top 10</h4>
+          <div id="leaderboardContainer" class="text-dark table_scoring"></div>
+        </div>
+      </div>
+      <div class="row g-0">
+        <div class="col-10 offset-1 text-center">
+          <button class="btn btn-dark my-5 px-5" onclick="location.reload()">Retry</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- content MODAL PSEUDO -->
+    <div class="modal fade" id="pseudoModal" tabindex="-1" aria-labelledby="pseudoModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-white p-5">
+          <h5 class="text-dark p-0 m-0" id="pseudoModalLabel">Insert your nickname</h5>
+          <input type="text" id="pseudoInput" class="bg-light border-0 form-control text-dark border-dark my-3" placeholder="Your nickname" />
+          <div class="d-flex flex-row justify-content-end">
+            <button type="button" class="w-25 btn btn-warning" id="submitPseudoBtn">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- appel JS -->
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js';
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        getDocs,
+        query,
+        orderBy,
+        limit,
+        doc,
+        updateDoc,
+        increment,
+        getDoc,
+        setDoc,
+        deleteDoc,
+      } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js';
+      import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js';
+      const firebaseConfig = {
+        apiKey: 'AIzaSyB6z3ajkXJr7NIj7PmAkREA9uieAttGyk0',
+        authDomain: 'swipe-king-6f95b.firebaseapp.com',
+        projectId: 'swipe-king-6f95b',
+        storageBucket: 'swipe-king-6f95b.firebasestorage.app',
+        messagingSenderId: '149048703091',
+        appId: '1:149048703091:web:8bd7b61d44648fd4a7d206',
+      };
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      await signInAnonymously(auth);
+      const db = getFirestore(app);
+      window.saveScore = async (name, score) => {
+        const user = auth.currentUser;
+        if (!user) return;
+        if (score < 0 || score > 50000) return;
+        await addDoc(collection(db, 'scores'), {
+          uid: user.uid,
+          name: name.substring(0, 20),
+          score,
+          date: Date.now(),
+        });
+        const q = query(collection(db, 'scores'), orderBy('score', 'desc'));
+        const snap = await getDocs(q);
+        const docs = snap.docs;
+        if (docs.length > 10) {
+          const toDelete = docs.slice(10);
+          for (const d of toDelete) {
+            await deleteDoc(doc(db, 'scores', d.id));
+          }
+        }
+      };
+      window.getScores = async () => {
+        const q = query(collection(db, 'scores'), orderBy('score', 'desc'), limit(10));
+        const snap = await getDocs(q);
+        let html = '';
+        snap.forEach((d) => {
+          let s = d.data();
+          html += `<div>${s.name} - ${s.score} cm</div>`;
+        });
+        return html;
+      };
+      window.incrementVisits = async () => {
+        const ref = doc(db, 'stats', 'global');
+        try {
+          const snap = await getDoc(ref);
+          if (!snap.exists()) {
+            await setDoc(ref, { visits: 1 });
+            return 1;
+          }
+          const current = snap.data()?.visits ?? 0;
+          await setDoc(ref, { visits: current + 1 });
+          return current + 1;
+        } catch (e) {
+          console.error('VISITS ERROR:', e);
+          return 0;
+        }
+      };
+    </script>
+    <script src="dist/js/js_game.js"></script>
+    <script src="dist/js/bootstrap.bundle.js"></script>
+  </body>
 </html>

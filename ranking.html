@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>app - SWIPEKING</title>
+    <!-- connect GOOGLE FONT -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- appel CSS -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <!-- content RANKING -->
+    <div id="topbar" class="container-sm g-0 bg-dark vh-100 d-flex flex-column justify-content-between wrapper_appranking">
+      <!-- bloc TABLE -->
+      <div class="row g-0 d-flex flex-row justify-content-center align-items-center vh-100">
+        <div class="col-12 text-white mt-3">
+          <div class="row g-0">
+            <div class="col-5 offset-1 text-white">
+              <h3 class="p-0 m-0 mb-3">Swipe <span class="text-warning">Top 10</span></h3>
+              <div class="table-responsive">
+                <table class="table table-dark table-striped table-sm" id="swipeTopTable">
+                  <thead>
+                    <tr>
+                      <th scope="col">
+                        <p class="fw-normal text-warning p-0 m-0">#</p>
+                      </th>
+                      <th scope="col">
+                        <p class="fw-normal text-warning p-0 m-0">Nom</p>
+                      </th>
+                      <th scope="col">
+                        <p class="fw-normal text-warning p-0 m-0">Score (cm)</p>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="swipeTopBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="col-5 text-white">
+              <h3 class="p-0 m-0 mb-3">Rope <span class="text-warning">Top 10</span></h3>
+              <div class="table-responsive">
+                <table class="table table-dark table-striped table-sm" id="ropeTopTable">
+                  <thead>
+                    <tr>
+                      <th scope="col fw-normal">
+                        <p class="fw-normal text-warning p-0 m-0">#</p>
+                      </th>
+                      <th scope="col fw-normal">
+                        <p class="fw-normal text-warning p-0 m-0">Nom</p>
+                      </th>
+                      <th scope="col fw-normal">
+                        <p class="fw-normal text-warning p-0 m-0">Temps (s)</p>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="ropeTopBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- bloc CTA -->
+      <div class="row g-0">
+        <div class="col-6 offset-3 my-5 text-center">
+          <a href="index.html" class="btn btn-outline-secondary w-50">back</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- appel JS -->
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js';
+      import { getFirestore, collection, getDocs, query, orderBy, limit, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js';
+      import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js';
+      const firebaseConfig = {
+        apiKey: 'AIzaSyB6z3ajkXJr7NIj7PmAkREA9uieAttGyk0',
+        authDomain: 'swipe-king-6f95b.firebaseapp.com',
+        projectId: 'swipe-king-6f95b',
+        storageBucket: 'swipe-king-6f95b.firebasestorage.app',
+        messagingSenderId: '149048703091',
+        appId: '1:149048703091:web:8bd7b61d44648fd4a7d206',
+      };
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      await signInAnonymously(auth);
+      const db = getFirestore(app);
+
+      // petit utilitaire pour éviter l'injection HTML lors de l'affichage
+      function escapeHtml(str) {
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+
+      /* script FIREBASE */
+      async function updateActiveRooms() {
+        const snap = await getDocs(collection(db, 'rooms_1v1'));
+        const activeRoomsEl = document.getElementById('activeRooms');
+        if (activeRoomsEl) {
+          activeRoomsEl.textContent = 'Active Rope : ' + snap.size;
+        }
+      }
+      async function updateSwipeVisits() {
+        const ref = doc(db, 'stats', 'global');
+        const snap = await getDoc(ref);
+        const v = snap.exists() ? (snap.data()?.visits ?? 0) : 0;
+        const swipeVisitsEl = document.getElementById('swipeVisits');
+        if (swipeVisitsEl) {
+          swipeVisitsEl.textContent = 'Swipe King : ' + v;
+        }
+      }
+      async function updateRopeVisits() {
+        const ref = doc(db, 'statsropesolo', 'global');
+        const snap = await getDoc(ref);
+        const v = snap.exists() ? (snap.data()?.visits ?? 0) : 0;
+        const ropeVisitsEl = document.getElementById('ropeVisits');
+        if (ropeVisitsEl) {
+          ropeVisitsEl.textContent = 'Rope Solo : ' + v;
+        }
+      }
+      async function updateSwipeTop() {
+        const q = query(collection(db, 'scores'), orderBy('score', 'desc'), limit(10));
+        const snap = await getDocs(q);
+        let rows = '';
+        let i = 1;
+        snap.forEach((d) => {
+          const s = d.data();
+          const name = s.name ?? '???';
+          const score = s.score ?? 0;
+          rows += `<tr><th scope="row">${i++}</th><td>${escapeHtml(name)}</td><td>${escapeHtml(score)}</td></tr>`;
+        });
+        const swipeTopBody = document.getElementById('swipeTopBody');
+        if (swipeTopBody) {
+          swipeTopBody.innerHTML = rows;
+        }
+      }
+      async function updateRopeTop10() {
+        const snap = await getDocs(collection(db, 'scoresropesolo'));
+        let scores = [];
+        snap.forEach((doc) => {
+          const d = doc.data();
+          if (d.time !== undefined) {
+            scores.push({ name: d.name ?? '???', time: d.time });
+          }
+        });
+        scores.sort((a, b) => a.time - b.time);
+        scores = scores.slice(0, 10);
+        let rows = '';
+        scores.forEach((s, i) => {
+          rows += `<tr><th scope="row">${i + 1}</th><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.time.toFixed(2))}</td></tr>`;
+        });
+        const ropeTopBody = document.getElementById('ropeTopBody');
+        if (ropeTopBody) {
+          ropeTopBody.innerHTML = rows;
+        }
+      }
+      async function refresh() {
+        await updateActiveRooms();
+        await updateSwipeVisits();
+        await updateRopeVisits();
+        await updateSwipeTop();
+        await updateRopeTop10();
+      }
+      refresh();
+      setInterval(refresh, 5000);
+    </script>
+    <script src="dist/js/bootstrap.bundle.js"></script>
+  </body>
+</html>
