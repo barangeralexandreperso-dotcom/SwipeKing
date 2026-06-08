@@ -56,7 +56,7 @@
                       </th>
                     </tr>
                   </thead>
-                  <tbody id="ropeTopBody"></tbody>
+                  <tbody id="levelsContainer"></tbody>
                 </table>
               </div>
             </div>
@@ -72,100 +72,188 @@
     </div>
 
     <!-- appel JS -->
-    <script type="module">
-      import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js';
-      import { getFirestore, collection, getDocs, query, orderBy, limit, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js';
-      import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js';
-      const firebaseConfig = {
-        apiKey: 'AIzaSyB6z3ajkXJr7NIj7PmAkREA9uieAttGyk0',
-        authDomain: 'swipe-king-6f95b.firebaseapp.com',
-        projectId: 'swipe-king-6f95b',
-        storageBucket: 'swipe-king-6f95b.firebasestorage.app',
-        messagingSenderId: '149048703091',
-        appId: '1:149048703091:web:8bd7b61d44648fd4a7d206',
-      };
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      await signInAnonymously(auth);
-      const db = getFirestore(app);
+   <script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js';
+import {
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  doc,
+  getDoc,
+  getFirestore
+} from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js';
 
-      // petit utilitaire pour éviter l'injection HTML lors de l'affichage
-      function escapeHtml(str) {
-        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-      }
+/* =========================
+   FIREBASE
+========================= */
 
-      /* script FIREBASE */
-      async function updateActiveRooms() {
-        const snap = await getDocs(collection(db, 'rooms_1v1'));
-        const activeRoomsEl = document.getElementById('activeRooms');
-        if (activeRoomsEl) {
-          activeRoomsEl.textContent = 'Active Rope : ' + snap.size;
-        }
-      }
-      async function updateSwipeVisits() {
-        const ref = doc(db, 'stats', 'global');
-        const snap = await getDoc(ref);
-        const v = snap.exists() ? (snap.data()?.visits ?? 0) : 0;
-        const swipeVisitsEl = document.getElementById('swipeVisits');
-        if (swipeVisitsEl) {
-          swipeVisitsEl.textContent = 'Swipe King : ' + v;
-        }
-      }
-      async function updateRopeVisits() {
-        const ref = doc(db, 'statsropesolo', 'global');
-        const snap = await getDoc(ref);
-        const v = snap.exists() ? (snap.data()?.visits ?? 0) : 0;
-        const ropeVisitsEl = document.getElementById('ropeVisits');
-        if (ropeVisitsEl) {
-          ropeVisitsEl.textContent = 'Rope Solo : ' + v;
-        }
-      }
-      async function updateSwipeTop() {
-        const q = query(collection(db, 'scores'), orderBy('score', 'desc'), limit(10));
-        const snap = await getDocs(q);
-        let rows = '';
-        let i = 1;
-        snap.forEach((d) => {
-          const s = d.data();
-          const name = s.name ?? '???';
-          const score = s.score ?? 0;
-          rows += `<tr><th scope="row">${i++}</th><td>${escapeHtml(name)}</td><td>${escapeHtml(score)}</td></tr>`;
-        });
-        const swipeTopBody = document.getElementById('swipeTopBody');
-        if (swipeTopBody) {
-          swipeTopBody.innerHTML = rows;
-        }
-      }
-      async function updateRopeTop10() {
-        const snap = await getDocs(collection(db, 'scoresropesolo'));
-        let scores = [];
-        snap.forEach((doc) => {
-          const d = doc.data();
-          if (d.time !== undefined) {
-            scores.push({ name: d.name ?? '???', time: d.time });
-          }
-        });
-        scores.sort((a, b) => a.time - b.time);
-        scores = scores.slice(0, 10);
-        let rows = '';
-        scores.forEach((s, i) => {
-          rows += `<tr><th scope="row">${i + 1}</th><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.time.toFixed(2))}</td></tr>`;
-        });
-        const ropeTopBody = document.getElementById('ropeTopBody');
-        if (ropeTopBody) {
-          ropeTopBody.innerHTML = rows;
-        }
-      }
-      async function refresh() {
-        await updateActiveRooms();
-        await updateSwipeVisits();
-        await updateRopeVisits();
-        await updateSwipeTop();
-        await updateRopeTop10();
-      }
-      refresh();
-      setInterval(refresh, 5000);
-    </script>
+const firebaseConfig = {
+  apiKey: 'AIzaSyB6z3ajkXJr7NIj7PmAkREA9uieAttGyk0',
+  authDomain: 'swipe-king-6f95b.firebaseapp.com',
+  projectId: 'swipe-king-6f95b',
+  storageBucket: 'swipe-king-6f95b.firebasestorage.app',
+  messagingSenderId: '149048703091',
+  appId: '1:149048703091:web:8bd7b61d44648fd4a7d206',
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+await signInAnonymously(auth);
+const db = getFirestore(app);
+
+/* =========================
+   VISUAL HELP
+========================= */
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/* =========================
+   LIVE STATS (10s)
+========================= */
+
+async function updateActiveRooms() {
+  const snap = await getDocs(collection(db, 'rooms_1v1'));
+  const el = document.getElementById('activeRooms');
+  if (el) el.textContent = 'Active Rope : ' + snap.size;
+}
+
+async function updateSwipeVisits() {
+  const snap = await getDoc(doc(db, 'stats', 'global'));
+  const v = snap.exists() ? snap.data()?.visits ?? 0 : 0;
+
+  const el = document.getElementById('swipeVisits');
+  if (el) el.textContent = 'Swipe King : ' + v;
+}
+
+async function updateRopeVisits() {
+  const snap = await getDoc(doc(db, 'statsropesolo', 'global'));
+  const v = snap.exists() ? snap.data()?.visits ?? 0 : 0;
+
+  const el = document.getElementById('ropeVisits');
+  if (el) el.textContent = 'Rope Solo : ' + v;
+}
+
+/* =========================
+   SWIPE TOP (LOAD ONLY)
+========================= */
+
+async function updateSwipeTop() {
+  const q = query(
+    collection(db, 'scores'),
+    orderBy('score', 'desc'),
+    limit(10)
+  );
+
+  const snap = await getDocs(q);
+
+  let rows = '';
+  let i = 1;
+
+  snap.forEach(d => {
+    const s = d.data();
+    rows += `
+      <tr>
+        <th>${i++}</th>
+        <td>${escapeHtml(s.name ?? '???')}</td>
+        <td>${escapeHtml(s.score ?? 0)}</td>
+      </tr>`;
+  });
+
+  const el = document.getElementById('swipeTopBody');
+  if (el) el.innerHTML = rows;
+}
+
+/* =========================
+   ROPE TOP (LOAD ONLY)
+========================= */
+
+async function updateRopeTop10() {
+  const container = document.getElementById('levelsContainer');
+  container.innerHTML = '';
+
+  const snap = await getDocs(collection(db, 'scoresropesolo'));
+
+  const levels = {};
+
+  snap.forEach(d => {
+    const data = d.data();
+    if (!data.level) return;
+
+    if (!levels[data.level]) levels[data.level] = [];
+
+    levels[data.level].push({
+      name: data.name ?? '???',
+      time: Number(data.time)
+    });
+  });
+
+  for (let level = 1; level <= 22; level++) {
+    const card = document.createElement('div');
+    card.className = 'mb-3 p-3 bg-dark text-white rounded';
+
+    const title = document.createElement('h5');
+    title.className = 'text-warning';
+    title.textContent = `Level ${level}`;
+    card.appendChild(title);
+
+    let list = levels[level] || [];
+    list.sort((a, b) => a.time - b.time);
+    list = list.slice(0, 3);
+
+    if (list.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'text-secondary';
+      empty.textContent = 'No score';
+      card.appendChild(empty);
+    } else {
+      list.forEach((s, i) => {
+        const row = document.createElement('div');
+        row.textContent = `${i + 1}. ${s.name} - ${s.time.toFixed(2)}s`;
+        card.appendChild(row);
+      });
+    }
+
+    container.appendChild(card);
+  }
+}
+
+/* =========================
+   LOOP CLEAN (ONLY LIVE DATA)
+========================= */
+
+setInterval(() => {
+  updateActiveRooms();
+  updateSwipeVisits();
+  updateRopeVisits();
+}, 10000);
+
+/* =========================
+   INIT
+========================= */
+
+async function init() {
+  // live
+  updateActiveRooms();
+  updateSwipeVisits();
+  updateRopeVisits();
+
+  // static (load only)
+  updateSwipeTop();
+  updateRopeTop10();
+}
+
+init();
+</script>
     <script src="dist/js/bootstrap.bundle.js"></script>
   </body>
 </html>
