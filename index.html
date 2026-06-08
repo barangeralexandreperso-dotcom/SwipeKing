@@ -76,7 +76,13 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 await signInAnonymously(auth);
 const db = getFirestore(app);
+/* =========================
+   NAVIGATION VERS GAME
+========================= */
 
+document.getElementById("startButton").addEventListener("click", () => {
+  window.location.href = "game.html";
+});
 /* =========================
    LIVE VALUES
 ========================= */
