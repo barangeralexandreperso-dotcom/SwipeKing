@@ -1,4 +1,4 @@
-SWIPEKING – A Game Concept by Alexandre Baranger
+SWIPE KING – A Game Concept by Alexandre Baranger
 
 Web Redesign by Stéphane Lebrethon
 
