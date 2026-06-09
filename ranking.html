@@ -39,27 +39,17 @@
                 </table>
               </div>
             </div>
-            <div class="col-5 text-white">
-              <h3 class="p-0 m-0 mb-3">Rope <span class="text-warning">Top 3</span></h3>
-              <div class="table-responsive">
-                <table class="table table-dark table-striped table-sm" id="ropeTopTable">
-                  <thead>
-                    <tr>
-                      <th scope="col fw-normal">
-                        <p class="fw-normal text-warning p-0 m-0">#</p>
-                      </th>
-                      <th scope="col fw-normal">
-                        <p class="fw-normal text-warning p-0 m-0">Nom</p>
-                      </th>
-                      <th scope="col fw-normal">
-                        <p class="fw-normal text-warning p-0 m-0">Temps (s)</p>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody id="levelsContainer"></tbody>
-                </table>
-              </div>
-            </div>
+
+		<div class="col-5 text-white ms-4">
+  		<h3 class="p-0 m-0 mb-3">Rope <span class="text-warning">Top 3</span></h3>
+  		<div
+    		id="levelsContainer"
+   		class="row row-cols-3 gx-1 gy-2"
+    		style="max-height:75vh; overflow-y:auto;"
+  		>
+		</div>
+		</div>
+
           </div>
         </div>
       </div>
@@ -198,8 +188,11 @@ async function updateRopeTop10() {
   });
 
   for (let level = 1; level <= 22; level++) {
-    const card = document.createElement('div');
-    card.className = 'mb-3 p-3 bg-dark text-white rounded';
+	const wrapper = document.createElement('div');
+	wrapper.className = 'col';
+
+	const card = document.createElement('div');
+	card.className = 'p-3 bg-dark text-white rounded h-100';
 
     const title = document.createElement('h5');
     title.className = 'text-warning';
@@ -223,7 +216,8 @@ async function updateRopeTop10() {
       });
     }
 
-    container.appendChild(card);
+	wrapper.appendChild(card);
+	container.appendChild(wrapper);
   }
 }
 
